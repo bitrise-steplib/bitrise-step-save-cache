@@ -1,0 +1,25 @@
+title: Save Cache
+summary: Saves build cache using a cache key
+description: TODO
+website: https://github.com/bitrise-steplib/bitrise-step-save-cache
+source_code_url: https://github.com/bitrise-steplib/bitrise-step-save-cache
+support_url: https://github.com/bitrise-steplib/bitrise-step-save-cache/issues
+
+type_tags:
+- utility
+
+run_if: .IsCI
+
+toolkit:
+  go:
+    package_name: github.com/bitrise-steplib/bitrise-step-save-cache
+
+inputs:
+- verbose: "false"
+  opts:
+    title: Enable verbose logging
+    summary: Enable logging additional information for debugging
+    is_required: true
+    value_options:
+    - "true"
+    - "false"
