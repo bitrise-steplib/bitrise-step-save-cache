@@ -15,6 +15,16 @@ toolkit:
     package_name: github.com/bitrise-steplib/bitrise-step-save-cache
 
 inputs:
+- key:
+  opts:
+    title: Cache key
+    is_required: true
+
+- paths:
+  opts:
+    title: Paths to cache
+    is_required: true
+
 - verbose: "false"
   opts:
     title: Enable verbose logging
