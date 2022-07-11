@@ -76,6 +76,61 @@ func Test_ProcessConfig(t *testing.T) {
 	}
 }
 
+func Test_evaluateKey(t *testing.T) {
+	type args struct {
+		keyTemplate string
+		envRepo     fakeEnvRepo
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    string
+		wantErr bool
+	}{
+		{
+			name: "Happy path",
+			args: args{
+				keyTemplate: "npm-cache-{{ .Branch }}",
+				envRepo: fakeEnvRepo{envVars: map[string]string{
+					"BITRISE_WORKFLOW_ID": "primary",
+					"BITRISE_GIT_BRANCH":  "main",
+					"BITRISE_GIT_COMMIT":  "9de033412f24b70b59ca8392ccb9f61ac5af4cc3",
+				}},
+			},
+			want:    "npm-cache-main",
+			wantErr: false,
+		},
+		{
+			name: "Empty env vars",
+			args: args{
+				keyTemplate: "npm-cache-{{ .Branch }}",
+				envRepo:     fakeEnvRepo{},
+			},
+			want:    "npm-cache-",
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			step := SaveCacheStep{
+				logger:         log.NewLogger(),
+				inputParser:    fakeInputParser{},
+				commandFactory: command.NewFactory(env.NewRepository()),
+				pathChecker:    pathutil.NewPathChecker(),
+				envRepo:        tt.args.envRepo,
+			}
+			got, err := step.evaluateKey(tt.args.keyTemplate)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("evaluateKey() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if got != tt.want {
+				t.Errorf("evaluateKey() got = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
 type fakeInputParser struct {
 	verbose bool
 	key     string
@@ -89,4 +144,35 @@ func (p fakeInputParser) Parse(input interface{}) error {
 	inputRef.Paths = p.paths
 
 	return nil
+}
+
+type fakeEnvRepo struct {
+	envVars map[string]string
+}
+
+func (repo fakeEnvRepo) Get(key string) string {
+	value, ok := repo.envVars[key]
+	if ok {
+		return value
+	} else {
+		return ""
+	}
+}
+
+func (repo fakeEnvRepo) Set(key, value string) error {
+	repo.envVars[key] = value
+	return nil
+}
+
+func (repo fakeEnvRepo) Unset(key string) error {
+	repo.envVars[key] = ""
+	return nil
+}
+
+func (repo fakeEnvRepo) List() []string {
+	var values []string
+	for _, v := range repo.envVars {
+		values = append(values, v)
+	}
+	return values
 }
