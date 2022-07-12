@@ -21,7 +21,7 @@ func run() int {
 	inputParser := stepconf.NewInputParser(envRepo)
 	cmdFactory := command.NewFactory(envRepo)
 	pathChecker := pathutil.NewPathChecker()
-	cacheStep := step.New(logger, inputParser, cmdFactory, pathChecker)
+	cacheStep := step.New(logger, inputParser, cmdFactory, pathChecker, envRepo)
 
 	exitCode := 0
 

@@ -4,8 +4,10 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/bitrise-io/go-steputils/v2/cache/keytemplate"
 	"github.com/bitrise-io/go-steputils/v2/stepconf"
 	"github.com/bitrise-io/go-utils/v2/command"
+	"github.com/bitrise-io/go-utils/v2/env"
 	"github.com/bitrise-io/go-utils/v2/log"
 	"github.com/bitrise-io/go-utils/v2/pathutil"
 )
@@ -27,14 +29,16 @@ type SaveCacheStep struct {
 	inputParser    stepconf.InputParser
 	commandFactory command.Factory
 	pathChecker    pathutil.PathChecker
+	envRepo        env.Repository
 }
 
-func New(logger log.Logger, inputParser stepconf.InputParser, commandFactory command.Factory, pathChecker pathutil.PathChecker) SaveCacheStep {
+func New(logger log.Logger, inputParser stepconf.InputParser, commandFactory command.Factory, pathChecker pathutil.PathChecker, envRepo env.Repository) SaveCacheStep {
 	return SaveCacheStep{
 		logger:         logger,
 		inputParser:    inputParser,
 		commandFactory: commandFactory,
 		pathChecker:    pathChecker,
+		envRepo:        envRepo,
 	}
 }
 
@@ -63,6 +67,22 @@ func (step SaveCacheStep) ProcessConfig() (*Config, error) {
 }
 
 func (step SaveCacheStep) Run(config Config) error {
+	evaluatedKey, err := step.evaluateKey(config.Key)
+	if err != nil {
+		return fmt.Errorf("failed to evaluate key template: %s", err)
+	}
+	step.logger.Donef("Cache key: %s", evaluatedKey)
 
 	return nil
+}
+
+func (step SaveCacheStep) evaluateKey(keyTemplate string) (string, error) {
+	model := keytemplate.NewModel(step.envRepo, step.logger)
+	buildContext := keytemplate.BuildContext{
+		Workflow:   step.envRepo.Get("BITRISE_WORKFLOW_ID"),
+		Branch:     step.envRepo.Get("BITRISE_GIT_BRANCH"),
+		CommitHash: step.envRepo.Get("BITRISE_GIT_COMMIT"),
+	}
+
+	return model.Evaluate(keyTemplate, buildContext)
 }
