@@ -141,9 +141,7 @@ func (step SaveCacheStep) compress(paths []string) (string, error) {
 		"--directory",
 		step.envRepo.Get("BITRISE_SOURCE_DIR"),
 	}
-	for _, path := range paths {
-		tarArgs = append(tarArgs, path)
-	}
+	tarArgs = append(tarArgs, paths...)
 
 	cmd := step.commandFactory.Create("tar", tarArgs, nil)
 
