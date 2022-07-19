@@ -10,6 +10,7 @@ import (
 	"github.com/bitrise-io/go-utils/v2/log"
 )
 
+// Model ...
 type Model struct {
 	envRepo env.Repository
 	logger  log.Logger
@@ -17,6 +18,7 @@ type Model struct {
 	arch    string
 }
 
+// BuildContext contains metadata about the build that gets exposed to the template
 type BuildContext struct {
 	Workflow   string
 	Branch     string
@@ -31,6 +33,7 @@ type templateInventory struct {
 	CommitHash string
 }
 
+// NewModel ...
 func NewModel(envRepo env.Repository, logger log.Logger) Model {
 	return Model{
 		envRepo: envRepo,
@@ -43,7 +46,8 @@ func NewModel(envRepo env.Repository, logger log.Logger) Model {
 // Evaluate returns the final string from a key template and the provided build context
 func (m Model) Evaluate(key string, buildContext BuildContext) (string, error) {
 	funcMap := template.FuncMap{
-		"getenv": m.getEnvVar,
+		"getenv":   m.getEnvVar,
+		"checksum": m.checksum,
 	}
 
 	tmpl, err := template.New("").Funcs(funcMap).Parse(key)
@@ -68,7 +72,11 @@ func (m Model) Evaluate(key string, buildContext BuildContext) (string, error) {
 }
 
 func (m Model) getEnvVar(key string) string {
-	return m.envRepo.Get(key)
+	value := m.envRepo.Get(key)
+	if value == "" {
+		m.logger.Warnf("Environment variable %s is empty", key)
+	}
+	return value
 }
 
 func (m Model) validateInventory(inventory templateInventory) {
