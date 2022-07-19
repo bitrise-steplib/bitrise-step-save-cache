@@ -100,9 +100,9 @@ func Test_evaluateKey(t *testing.T) {
 			args: args{
 				keyTemplate: "npm-cache-{{ .Branch }}",
 				envRepo: fakeEnvRepo{envVars: map[string]string{
-					"BITRISE_WORKFLOW_ID": "primary",
-					"BITRISE_GIT_BRANCH":  "main",
-					"BITRISE_GIT_COMMIT":  "9de033412f24b70b59ca8392ccb9f61ac5af4cc3",
+					"BITRISE_TRIGGERED_WORKFLOW_ID": "primary",
+					"BITRISE_GIT_BRANCH":            "main",
+					"BITRISE_GIT_COMMIT":            "9de033412f24b70b59ca8392ccb9f61ac5af4cc3",
 				}},
 			},
 			want:    "npm-cache-main",
