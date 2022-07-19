@@ -135,7 +135,7 @@ func (step SaveCacheStep) compress(paths []string) (string, error) {
 	tarArgs := []string{
 		"--use-compress-program",
 		"zstd --threads=0 --long", // Use CPU count threads, enable long distance matching
-		"--absolute-paths",
+		"-P",                      // Same as --absolute-paths in BSD tar, --absolute-names in GNU tar
 		"-cf",
 		archivePath,
 		"--directory",
