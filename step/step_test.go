@@ -1,6 +1,7 @@
 package step
 
 import (
+	"path/filepath"
 	"reflect"
 	"testing"
 
@@ -11,6 +12,11 @@ import (
 )
 
 func Test_ProcessConfig(t *testing.T) {
+	testdataAbsPath, err := filepath.Abs("testdata")
+	if err != nil {
+		t.Errorf(err.Error())
+	}
+
 	tests := []struct {
 		name        string
 		inputParser fakeInputParser
@@ -32,12 +38,12 @@ func Test_ProcessConfig(t *testing.T) {
 			inputParser: fakeInputParser{
 				verbose: false,
 				key:     "cache-key",
-				paths:   "/dev/null",
+				paths:   "testdata/dummy_file.txt",
 			},
 			want: &Config{
 				Verbose: false,
 				Key:     "cache-key",
-				Paths:   []string{"/dev/null"},
+				Paths:   []string{filepath.Join(testdataAbsPath, "dummy_file.txt")},
 			},
 			wantErr: false,
 		},
@@ -46,12 +52,12 @@ func Test_ProcessConfig(t *testing.T) {
 			inputParser: fakeInputParser{
 				verbose: false,
 				key:     "cache-key",
-				paths:   "/dev/null\n$BITRISE_SOURCE_DIR/node_modules\n~/.gradle",
+				paths:   "testdata/dummy_file.txt\ntestdata/subfolder/nested_file.txt",
 			},
 			want: &Config{
 				Verbose: false,
 				Key:     "cache-key",
-				Paths:   []string{"/dev/null", "$BITRISE_SOURCE_DIR/node_modules", "~/.gradle"},
+				Paths:   []string{filepath.Join(testdataAbsPath, "dummy_file.txt"), filepath.Join(testdataAbsPath, "subfolder", "nested_file.txt")},
 			},
 			wantErr: false,
 		},
@@ -63,6 +69,8 @@ func Test_ProcessConfig(t *testing.T) {
 				inputParser:    tt.inputParser,
 				commandFactory: command.NewFactory(env.NewRepository()),
 				pathChecker:    pathutil.NewPathChecker(),
+				pathProvider:   pathutil.NewPathProvider(),
+				pathModifier:   pathutil.NewPathModifier(),
 			}
 			got, err := step.ProcessConfig()
 			if (err != nil) != tt.wantErr {
@@ -92,9 +100,9 @@ func Test_evaluateKey(t *testing.T) {
 			args: args{
 				keyTemplate: "npm-cache-{{ .Branch }}",
 				envRepo: fakeEnvRepo{envVars: map[string]string{
-					"BITRISE_WORKFLOW_ID": "primary",
-					"BITRISE_GIT_BRANCH":  "main",
-					"BITRISE_GIT_COMMIT":  "9de033412f24b70b59ca8392ccb9f61ac5af4cc3",
+					"BITRISE_TRIGGERED_WORKFLOW_ID": "primary",
+					"BITRISE_GIT_BRANCH":            "main",
+					"BITRISE_GIT_COMMIT":            "9de033412f24b70b59ca8392ccb9f61ac5af4cc3",
 				}},
 			},
 			want:    "npm-cache-main",
