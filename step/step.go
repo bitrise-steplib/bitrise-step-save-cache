@@ -71,7 +71,11 @@ func (step SaveCacheStep) ProcessConfig() (*Config, error) {
 			continue
 		}
 
-		if exists, _ := step.pathChecker.IsPathExists(absPath); !exists {
+		exists, err := step.pathChecker.IsPathExists(absPath)
+		if err != nil {
+			step.logger.Warnf("Failed to check path %s, error: %s", absPath, err)
+		}
+		if !exists {
 			step.logger.Warnf("Cache path doesn't exist: %s", path)
 			continue
 		}
