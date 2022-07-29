@@ -40,7 +40,7 @@ func Test_compression(t *testing.T) {
 		"../step/testdata/dummy_file.txt",
 		"../step/testdata/subfolder/nested_file.txt",
 	}
-	assert.Equal(t, expected, archiveContents)
+	assert.ElementsMatch(t, expected, archiveContents)
 }
 
 func listArchiveContents(path string) ([]string, error) {
