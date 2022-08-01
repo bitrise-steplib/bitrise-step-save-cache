@@ -7,6 +7,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/bitrise-steplib/steps-save-cache/compression"
+
 	"github.com/bitrise-io/go-steputils/v2/cache/keytemplate"
 	"github.com/bitrise-io/go-steputils/v2/stepconf"
 	"github.com/bitrise-io/go-utils/v2/command"
@@ -136,24 +138,8 @@ func (step SaveCacheStep) compress(paths []string) (string, error) {
 	}
 	archivePath := filepath.Join(tempDir, fileName)
 
-	tarArgs := []string{
-		"--use-compress-program",
-		"zstd --threads=0 --long", // Use CPU count threads, enable long distance matching
-		"-P",                      // Same as --absolute-paths in BSD tar, --absolute-names in GNU tar
-		"-cf",
-		archivePath,
-		"--directory",
-		step.envRepo.Get("BITRISE_SOURCE_DIR"),
-	}
-	tarArgs = append(tarArgs, paths...)
-
-	cmd := step.commandFactory.Create("tar", tarArgs, nil)
-
-	step.logger.Debugf("$ %s", cmd.PrintableCommandArgs())
-
-	out, err := cmd.RunAndReturnTrimmedCombinedOutput()
+	err = compression.Compress(archivePath, paths, step.logger, step.envRepo)
 	if err != nil {
-		step.logger.Errorf("Compression command failed: %s", out)
 		return "", err
 	}
 

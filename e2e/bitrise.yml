@@ -2,6 +2,21 @@ format_version: "11"
 default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
 
 workflows:
+  test_integration:
+    steps:
+    - script:
+        title: Integration tests
+        deps:
+          brew:
+          - name: zstd
+          apt_get:
+          - name: zstd
+        inputs:
+        - content: |-
+            #!/bin/bash
+            set -ex
+            go test -v -tags integration ./integration
+
   test_npm:
     envs:
     - TEST_APP_URL: https://github.com/bitrise-io/Bitrise-React-Native-Sample
