@@ -4,6 +4,7 @@
 package integration
 
 import (
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -17,6 +18,8 @@ import (
 )
 
 func Test_compression(t *testing.T) {
+	checkTools()
+
 	// Given
 	archivePath := filepath.Join(t.TempDir(), "compression_test.tzst")
 	logger := log.NewLogger()
@@ -41,6 +44,13 @@ func Test_compression(t *testing.T) {
 		"../step/testdata/subfolder/nested_file.txt",
 	}
 	assert.ElementsMatch(t, expected, archiveContents)
+}
+
+func checkTools() {
+	_, err := exec.LookPath("zstd")
+	if err != nil {
+		panic("zstd needs to be installed before running integration tests")
+	}
 }
 
 func listArchiveContents(path string) ([]string, error) {
