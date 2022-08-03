@@ -1,6 +1,12 @@
 format_version: "11"
 default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
 
+app:
+  envs:
+  # Shared secrets for testing, use a .bitrise.secrets.yml file to define these locally
+  - BITRISEIO_CACHE_SERVICE_URL: $BITRISEIO_CACHE_SERVICE_URL
+  - CACHE_API_CLIENT_SECRET: $CACHE_API_CLIENT_SECRET
+
 workflows:
   test_integration:
     before_run:
@@ -25,8 +31,8 @@ workflows:
     - BRANCH: master
     - BITRISE_SOURCE_DIR: .
     before_run:
-    - _setup
     - _generate_api_token
+    - _setup
     steps:
     - change-workdir:
         title: Switch working dir to _tmp
@@ -53,8 +59,8 @@ workflows:
     - BRANCH: main
     - BITRISE_SOURCE_DIR: .
     before_run:
-    - _setup
     - _generate_api_token
+    - _setup
     steps:
     - change-workdir:
         title: Switch working dir to _tmp
@@ -100,11 +106,11 @@ workflows:
         inputs:
         - content: |
             #!/bin/env bash
-            set -x
+            set -e
 
             json_response=$(curl --fail -X POST https://auth.services.bitrise.dev/auth/realms/bitrise-services/protocol/openid-connect/token -k \
                 --data "client_id=abcs-steps" \
-                --data "client_secret=$API_CLIENT_SECRET" \
+                --data "client_secret=$CACHE_API_CLIENT_SECRET" \
                 --data "grant_type=urn:ietf:params:oauth:grant-type:uma-ticket" \
                 --data "claim_token=eyJhcHBfaWQiOlsic3RlcC1zYXZlLWNhY2hlLWUyZS10ZXN0cyJdfQ==" \
                 --data "claim_token_format=urn:ietf:params:oauth:token-type:jwt" \

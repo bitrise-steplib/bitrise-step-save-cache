@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"net/http"
 	"os"
 	"testing"
 
@@ -22,10 +23,12 @@ import (
 	"github.com/bitrise-steplib/steps-save-cache/network"
 )
 
+var logger = log.NewLogger()
+
 func TestUpload(t *testing.T) {
 	// Given
 	cacheKey := "integration-test"
-	baseURL := os.Getenv("ABCS_API_URL")
+	baseURL := os.Getenv("BITRISEIO_CACHE_SERVICE_URL")
 	token := os.Getenv("BITRISEIO_CACHE_SERVICE_ACCESS_TOKEN")
 	testFile := "testdata/test.tzst"
 	params := network.UploadParams{
@@ -89,13 +92,24 @@ func downloadArchive(cacheKey string, baseURL string, token string) (string, err
 	downloadURL := parsedResp["url"].(string)
 
 	// Download archive using pre-signed URL
-	resp2, err := retryablehttp.Get(downloadURL)
+	req2, err := retryablehttp.NewRequest("GET", downloadURL, nil)
+	req2.Header.Set("Content-Type", "application/octet-stream")
+	resp2, err := client.Do(req2)
 	defer func(Body io.ReadCloser) {
 		err := Body.Close()
 		if err != nil {
 			panic(err)
 		}
 	}(resp2.Body)
+	if resp2.StatusCode != http.StatusOK {
+		logger.Errorf("HTTP status code: %d", resp2.StatusCode)
+		errorResp, err := ioutil.ReadAll(resp2.Body)
+		if err != nil {
+			return "", err
+		}
+		logger.Errorf("Error response: %s", errorResp)
+		return "", err
+	}
 
 	bytes, err := ioutil.ReadAll(resp2.Body)
 	if err != nil {

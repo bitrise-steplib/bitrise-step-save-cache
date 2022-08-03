@@ -27,9 +27,11 @@ type Input struct {
 }
 
 type Config struct {
-	Verbose bool
-	Key     string
-	Paths   []string
+	Verbose        bool
+	Key            string
+	Paths          []string
+	APIBaseURL     stepconf.Secret
+	APIAccessToken stepconf.Secret
 }
 
 type SaveCacheStep struct {
@@ -87,10 +89,21 @@ func (step SaveCacheStep) ProcessConfig() (*Config, error) {
 		finalPaths = append(finalPaths, absPath)
 	}
 
+	apiBaseURL := step.envRepo.Get("BITRISEIO_CACHE_SERVICE_URL")
+	if apiBaseURL == "" {
+		return nil, fmt.Errorf("the secret 'BITRISEIO_CACHE_SERVICE_URL' is not defined")
+	}
+	apiAccessToken := step.envRepo.Get("BITRISEIO_CACHE_SERVICE_ACCESS_TOKEN")
+	if apiAccessToken == "" {
+		return nil, fmt.Errorf("the secret 'BITRISEIO_CACHE_SERVICE_ACCESS_TOKEN' is not defined")
+	}
+
 	return &Config{
-		Verbose: input.Verbose,
-		Key:     input.Key,
-		Paths:   finalPaths,
+		Verbose:        input.Verbose,
+		Key:            input.Key,
+		Paths:          finalPaths,
+		APIBaseURL:     stepconf.Secret(apiBaseURL),
+		APIAccessToken: stepconf.Secret(apiAccessToken),
 	}, nil
 }
 
@@ -121,7 +134,7 @@ func (step SaveCacheStep) Run(config Config) error {
 	step.logger.Println()
 	step.logger.Infof("Uploading archive...")
 	uploadStartTime := time.Now()
-	err = step.upload(archivePath, fileInfo.Size(), evaluatedKey)
+	err = step.upload(archivePath, fileInfo.Size(), evaluatedKey, config)
 	if err != nil {
 		return fmt.Errorf("cache upload failed: %w", err)
 	}
@@ -157,10 +170,10 @@ func (step SaveCacheStep) compress(paths []string) (string, error) {
 	return archivePath, nil
 }
 
-func (step SaveCacheStep) upload(archivePath string, archiveSize int64, cacheKey string) error {
+func (step SaveCacheStep) upload(archivePath string, archiveSize int64, cacheKey string, config Config) error {
 	params := network.UploadParams{
-		APIBaseURL:  step.envRepo.Get("ABCS_API_URL"), // TODO: finalize this
-		Token:       step.envRepo.Get("BITRISEIO_CACHE_SERVICE_ACCESS_TOKEN"),
+		APIBaseURL:  string(config.APIBaseURL),
+		Token:       string(config.APIAccessToken),
 		ArchivePath: archivePath,
 		ArchiveSize: archiveSize,
 		CacheKey:    cacheKey,
