@@ -41,9 +41,11 @@ func Test_ProcessConfig(t *testing.T) {
 				paths:   "testdata/dummy_file.txt",
 			},
 			want: &Config{
-				Verbose: false,
-				Key:     "cache-key",
-				Paths:   []string{filepath.Join(testdataAbsPath, "dummy_file.txt")},
+				Verbose:        false,
+				Key:            "cache-key",
+				Paths:          []string{filepath.Join(testdataAbsPath, "dummy_file.txt")},
+				APIBaseURL:     "fake cache service URL",
+				APIAccessToken: "fake cache service access token",
 			},
 			wantErr: false,
 		},
@@ -55,9 +57,11 @@ func Test_ProcessConfig(t *testing.T) {
 				paths:   "testdata/dummy_file.txt\ntestdata/subfolder/nested_file.txt",
 			},
 			want: &Config{
-				Verbose: false,
-				Key:     "cache-key",
-				Paths:   []string{filepath.Join(testdataAbsPath, "dummy_file.txt"), filepath.Join(testdataAbsPath, "subfolder", "nested_file.txt")},
+				Verbose:        false,
+				Key:            "cache-key",
+				Paths:          []string{filepath.Join(testdataAbsPath, "dummy_file.txt"), filepath.Join(testdataAbsPath, "subfolder", "nested_file.txt")},
+				APIBaseURL:     "fake cache service URL",
+				APIAccessToken: "fake cache service access token",
 			},
 			wantErr: false,
 		},
@@ -71,6 +75,10 @@ func Test_ProcessConfig(t *testing.T) {
 				pathChecker:    pathutil.NewPathChecker(),
 				pathProvider:   pathutil.NewPathProvider(),
 				pathModifier:   pathutil.NewPathModifier(),
+				envRepo: fakeEnvRepo{envVars: map[string]string{
+					"BITRISEIO_CACHE_SERVICE_URL":          "fake cache service URL",
+					"BITRISEIO_CACHE_SERVICE_ACCESS_TOKEN": "fake cache service access token",
+				}},
 			}
 			got, err := step.ProcessConfig()
 			if (err != nil) != tt.wantErr {
