@@ -7,6 +7,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/bitrise-steplib/steps-save-cache/network"
+
 	"github.com/bitrise-steplib/steps-save-cache/compression"
 
 	"github.com/bitrise-io/go-steputils/v2/cache/keytemplate"
@@ -25,9 +27,11 @@ type Input struct {
 }
 
 type Config struct {
-	Verbose bool
-	Key     string
-	Paths   []string
+	Verbose        bool
+	Key            string
+	Paths          []string
+	APIBaseURL     stepconf.Secret
+	APIAccessToken stepconf.Secret
 }
 
 type SaveCacheStep struct {
@@ -85,10 +89,21 @@ func (step SaveCacheStep) ProcessConfig() (*Config, error) {
 		finalPaths = append(finalPaths, absPath)
 	}
 
+	apiBaseURL := step.envRepo.Get("BITRISEIO_CACHE_SERVICE_URL")
+	if apiBaseURL == "" {
+		return nil, fmt.Errorf("the secret 'BITRISEIO_CACHE_SERVICE_URL' is not defined")
+	}
+	apiAccessToken := step.envRepo.Get("BITRISEIO_CACHE_SERVICE_ACCESS_TOKEN")
+	if apiAccessToken == "" {
+		return nil, fmt.Errorf("the secret 'BITRISEIO_CACHE_SERVICE_ACCESS_TOKEN' is not defined")
+	}
+
 	return &Config{
-		Verbose: input.Verbose,
-		Key:     input.Key,
-		Paths:   finalPaths,
+		Verbose:        input.Verbose,
+		Key:            input.Key,
+		Paths:          finalPaths,
+		APIBaseURL:     stepconf.Secret(apiBaseURL),
+		APIAccessToken: stepconf.Secret(apiAccessToken),
 	}, nil
 }
 
@@ -102,19 +117,28 @@ func (step SaveCacheStep) Run(config Config) error {
 	step.logger.Donef("Cache key: %s", evaluatedKey)
 
 	step.logger.Println()
-	step.logger.Infof("Creating cache archive...")
-	startTime := time.Now()
+	step.logger.Infof("Creating archive...")
+	compressionStartTIme := time.Now()
 	archivePath, err := step.compress(config.Paths)
 	if err != nil {
 		return fmt.Errorf("compression failed: %s", err)
 	}
-	step.logger.Donef("Cache archive created in %s", time.Since(startTime).Round(time.Second))
+	step.logger.Donef("Archive created in %s", time.Since(compressionStartTIme).Round(time.Second))
 	fileInfo, err := os.Stat(archivePath)
 	if err != nil {
 		return err
 	}
 	step.logger.Printf("Archive size: %s", units.HumanSizeWithPrecision(float64(fileInfo.Size()), 3))
 	step.logger.Debugf("Archive path: %s", archivePath)
+
+	step.logger.Println()
+	step.logger.Infof("Uploading archive...")
+	uploadStartTime := time.Now()
+	err = step.upload(archivePath, fileInfo.Size(), evaluatedKey, config)
+	if err != nil {
+		return fmt.Errorf("cache upload failed: %w", err)
+	}
+	step.logger.Donef("Archive uploaded in %s", time.Since(uploadStartTime).Round(time.Second))
 
 	return nil
 }
@@ -144,4 +168,15 @@ func (step SaveCacheStep) compress(paths []string) (string, error) {
 	}
 
 	return archivePath, nil
+}
+
+func (step SaveCacheStep) upload(archivePath string, archiveSize int64, cacheKey string, config Config) error {
+	params := network.UploadParams{
+		APIBaseURL:  string(config.APIBaseURL),
+		Token:       string(config.APIAccessToken),
+		ArchivePath: archivePath,
+		ArchiveSize: archiveSize,
+		CacheKey:    cacheKey,
+	}
+	return network.Upload(params, step.logger)
 }
