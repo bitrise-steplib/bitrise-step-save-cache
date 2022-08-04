@@ -2,6 +2,7 @@ package network
 
 import (
 	"fmt"
+	"path/filepath"
 
 	"github.com/bitrise-io/go-utils/v2/log"
 	"github.com/bitrise-io/go-utils/v2/retryhttp"
@@ -21,6 +22,8 @@ func Upload(params UploadParams, logger log.Logger) error {
 	logger.Debugf("Get upload URL")
 	prepareUploadRequest := prepareUploadRequest{
 		CacheKey:           params.CacheKey,
+		ArchiveFileName:    filepath.Base(params.ArchivePath),
+		ArchiveContentType: "application/zstd",
 		ArchiveSizeInBytes: params.ArchiveSize,
 	}
 	resp, err := client.prepareUpload(prepareUploadRequest)
@@ -31,7 +34,7 @@ func Upload(params UploadParams, logger log.Logger) error {
 
 	logger.Println()
 	logger.Debugf("Upload archive")
-	err = client.uploadArchive(params.ArchivePath, params.ArchiveSize, resp.UploadURL)
+	err = client.uploadArchive(params.ArchivePath, resp.UploadURL, resp.UploadHeaders)
 	if err != nil {
 		return fmt.Errorf("failed to upload archive: %w", err)
 	}

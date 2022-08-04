@@ -13,12 +13,16 @@ import (
 
 type prepareUploadRequest struct {
 	CacheKey           string `json:"cache_key"`
+	ArchiveFileName    string `json:"archive_filename"`
+	ArchiveContentType string `json:"archive_content_type"`
 	ArchiveSizeInBytes int64  `json:"archive_size_in_bytes"`
 }
 
 type prepareUploadResponse struct {
-	ID        string `json:"id"`
-	UploadURL string `json:"url"`
+	ID            string            `json:"id"`
+	UploadMethod  string            `json:"method"`
+	UploadURL     string            `json:"url"`
+	UploadHeaders map[string]string `json:"headers"`
 }
 
 type apiClient struct {
@@ -78,7 +82,7 @@ func (c apiClient) prepareUpload(requestBody prepareUploadRequest) (prepareUploa
 	return response, nil
 }
 
-func (c apiClient) uploadArchive(archivePath string, archiveSize int64, uploadURL string) error {
+func (c apiClient) uploadArchive(archivePath string, uploadURL string, headers map[string]string) error {
 	file, err := os.Open(archivePath)
 	if err != nil {
 		return err
@@ -88,8 +92,10 @@ func (c apiClient) uploadArchive(archivePath string, archiveSize int64, uploadUR
 	if err != nil {
 		return err
 	}
-	req.Header.Set("Content-Type", "application/octet-stream")
-	req.Header.Set("X-Goog-Content-Length-Range", fmt.Sprintf("%d,%d", archiveSize, archiveSize))
+	for k, v := range headers {
+		req.Header.Set(k, v)
+	}
+
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return err
