@@ -157,7 +157,7 @@ func (step SaveCacheStep) evaluateKey(keyTemplate string) (string, error) {
 func (step SaveCacheStep) compress(paths []string) (string, error) {
 	if compression.AreAllPathsEmpty(paths) {
 		step.logger.Warnf("The provided paths are all empty, skipping compression and upload.")
-		os.Exit(1)
+		os.Exit(0)
 	}
 
 	fileName := fmt.Sprintf("cache-%s.tzst", time.Now().UTC().Format("20060102-150405"))

@@ -54,8 +54,8 @@ workflows:
 
   test_empty:
     description: |
-      Tests the case when there is nothing to compress based on the cache paths. The step is marked as skippable,
-      so it should not fail the entire workflow.
+      Tests the case when there is nothing to compress based on the cache paths. The step returns early in this case
+      with a 0 exit code
     before_run:
     - _generate_api_token
     steps:

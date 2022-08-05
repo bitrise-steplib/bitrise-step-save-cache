@@ -9,7 +9,6 @@ type_tags:
 - utility
 
 run_if: .IsCI
-is_skippable: true
 
 toolkit:
   go:
