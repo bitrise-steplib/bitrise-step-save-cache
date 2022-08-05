@@ -20,7 +20,7 @@ import (
 
 	"github.com/bitrise-io/go-utils/v2/log"
 
-	"github.com/bitrise-steplib/steps-save-cache/network"
+	"github.com/bitrise-steplib/bitrise-step-save-cache/network"
 )
 
 var logger = log.NewLogger()

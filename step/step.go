@@ -7,9 +7,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/bitrise-steplib/steps-save-cache/network"
+	"github.com/bitrise-steplib/bitrise-step-save-cache/network"
 
-	"github.com/bitrise-steplib/steps-save-cache/compression"
+	"github.com/bitrise-steplib/bitrise-step-save-cache/compression"
 
 	"github.com/bitrise-io/go-steputils/v2/cache/keytemplate"
 	"github.com/bitrise-io/go-steputils/v2/stepconf"
