@@ -29,7 +29,6 @@ workflows:
     envs:
     - TEST_APP_URL: https://github.com/bitrise-io/Bitrise-React-Native-Sample
     - BRANCH: master
-    - BITRISE_SOURCE_DIR: .
     before_run:
     - _generate_api_token
     - _setup
@@ -53,11 +52,31 @@ workflows:
             node_modules
         - verbose: "true"
 
+  test_empty:
+    description: |
+      Tests the case when there is nothing to compress based on the cache paths. The step returns early in this case
+      with a 0 exit code
+    before_run:
+    - _generate_api_token
+    steps:
+    - change-workdir:
+        title: Switch working dir to _tmp
+        inputs:
+        - path: ./_tmp
+        - is_create_path: true
+    - path::./:
+        title: Execute step
+        run_if: "true"
+        inputs:
+        - key: node-modules-{{ checksum "package-lock.json" }}
+        - paths: |-
+            node_modules
+        - verbose: "true"
+
   test_gradle:
     envs:
     - TEST_APP_URL: https://github.com/bitrise-io/Bitrise-Android-Sample
     - BRANCH: main
-    - BITRISE_SOURCE_DIR: .
     before_run:
     - _generate_api_token
     - _setup
@@ -87,15 +106,10 @@ workflows:
         title: Delete _tmp dir
         inputs:
         - content: rm -rf _tmp
-    - change-workdir:
-        title: Switch working dir to _tmp
-        inputs:
-        - path: ./_tmp
-        - is_create_path: true
     - git::https://github.com/bitrise-steplib/bitrise-step-simple-git-clone.git:
         inputs:
         - repository_url: $TEST_APP_URL
-        - clone_into_dir: .
+        - clone_into_dir: ./_tmp
         - branch: $BRANCH
 
   _generate_api_token:
