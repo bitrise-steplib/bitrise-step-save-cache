@@ -1,4 +1,4 @@
-module github.com/bitrise-steplib/steps-save-cache
+module github.com/bitrise-steplib/bitrise-step-save-cache
 
 go 1.17
 
