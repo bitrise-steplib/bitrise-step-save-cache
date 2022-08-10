@@ -16,8 +16,8 @@ func Compress(archivePath string, includePaths []string, logger log.Logger, envR
 
 	tarArgs := []string{
 		"--use-compress-program",
-		"zstd --threads=0 --long", // Use CPU count threads, enable long distance matching
-		"-P",                      // Same as --absolute-paths in BSD tar, --absolute-names in GNU tar
+		"zstd --threads=0", // Use CPU count threads
+		"-P",               // Same as --absolute-paths in BSD tar, --absolute-names in GNU tar
 		"-cf",
 		archivePath,
 		"--directory",
