@@ -76,8 +76,8 @@ func Test_ProcessConfig(t *testing.T) {
 				pathProvider:   pathutil.NewPathProvider(),
 				pathModifier:   pathutil.NewPathModifier(),
 				envRepo: fakeEnvRepo{envVars: map[string]string{
-					"BITRISEIO_CACHE_SERVICE_URL":          "fake cache service URL",
-					"BITRISEIO_CACHE_SERVICE_ACCESS_TOKEN": "fake cache service access token",
+					"BITRISEIO_ABCS_API_URL":      "fake cache service URL",
+					"BITRISEIO_ABCS_ACCESS_TOKEN": "fake cache service access token",
 				}},
 			}
 			got, err := step.ProcessConfig()
