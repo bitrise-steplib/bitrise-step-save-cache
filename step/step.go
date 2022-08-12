@@ -7,9 +7,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/bitrise-steplib/bitrise-step-save-cache/network"
-
 	"github.com/bitrise-steplib/bitrise-step-save-cache/compression"
+	"github.com/bitrise-steplib/bitrise-step-save-cache/network"
 
 	"github.com/bitrise-io/go-steputils/v2/cache/keytemplate"
 	"github.com/bitrise-io/go-steputils/v2/stepconf"
@@ -17,6 +16,7 @@ import (
 	"github.com/bitrise-io/go-utils/v2/env"
 	"github.com/bitrise-io/go-utils/v2/log"
 	"github.com/bitrise-io/go-utils/v2/pathutil"
+	"github.com/bmatcuk/doublestar/v4"
 	"github.com/docker/go-units"
 )
 
@@ -68,25 +68,9 @@ func (step SaveCacheStep) ProcessConfig() (*Config, error) {
 		return nil, fmt.Errorf("cache key should not be empty")
 	}
 
-	var finalPaths []string
-	pathSlice := strings.Split(input.Paths, "\n")
-	for _, path := range pathSlice {
-		absPath, err := step.pathModifier.AbsPath(path)
-		if err != nil {
-			step.logger.Warnf("Failed to parse path %s, error: %s", path, err)
-			continue
-		}
-
-		exists, err := step.pathChecker.IsPathExists(absPath)
-		if err != nil {
-			step.logger.Warnf("Failed to check path %s, error: %s", absPath, err)
-		}
-		if !exists {
-			step.logger.Warnf("Cache path doesn't exist: %s", path)
-			continue
-		}
-
-		finalPaths = append(finalPaths, absPath)
+	finalPaths, err := step.evaluatePaths(input.Paths)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse paths: %w", err)
 	}
 
 	apiBaseURL := step.envRepo.Get("BITRISEIO_CACHE_SERVICE_URL")
@@ -141,6 +125,57 @@ func (step SaveCacheStep) Run(config Config) error {
 	step.logger.Donef("Archive uploaded in %s", time.Since(uploadStartTime).Round(time.Second))
 
 	return nil
+}
+
+func (step SaveCacheStep) evaluatePaths(pathInput string) ([]string, error) {
+	pathSlice := strings.Split(pathInput, "\n")
+
+	// Expand wildcard paths
+	var expandedPaths []string
+	workingDir, err := os.Getwd()
+	if err != nil {
+		return nil, err
+	}
+	for _, path := range pathSlice {
+		if !strings.Contains(path, "*") {
+			expandedPaths = append(expandedPaths, path)
+			continue
+		}
+
+		matches, err := doublestar.Glob(os.DirFS(workingDir), path)
+		if matches == nil {
+			step.logger.Warnf("No match for path pattern: %s", path)
+			continue
+		}
+		if err != nil {
+			step.logger.Warnf("Error in path pattern '%s': %w", path, err)
+			continue
+		}
+		expandedPaths = append(expandedPaths, matches...)
+	}
+
+	// Validate and sanitize paths
+	var finalPaths []string
+	for _, path := range expandedPaths {
+		absPath, err := step.pathModifier.AbsPath(path)
+		if err != nil {
+			step.logger.Warnf("Failed to parse path %s, error: %s", path, err)
+			continue
+		}
+
+		exists, err := step.pathChecker.IsPathExists(absPath)
+		if err != nil {
+			step.logger.Warnf("Failed to check path %s, error: %s", absPath, err)
+		}
+		if !exists {
+			step.logger.Warnf("Cache path doesn't exist: %s", path)
+			continue
+		}
+
+		finalPaths = append(finalPaths, absPath)
+	}
+
+	return finalPaths, nil
 }
 
 func (step SaveCacheStep) evaluateKey(keyTemplate string) (string, error) {
