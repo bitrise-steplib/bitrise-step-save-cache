@@ -28,8 +28,8 @@ var logger = log.NewLogger()
 func TestUpload(t *testing.T) {
 	// Given
 	cacheKey := "integration-test"
-	baseURL := os.Getenv("BITRISEIO_CACHE_SERVICE_URL")
-	token := os.Getenv("BITRISEIO_CACHE_SERVICE_ACCESS_TOKEN")
+	baseURL := os.Getenv("BITRISEIO_ABCS_API_URL")
+	token := os.Getenv("BITRISEIO_ABCS_ACCESS_TOKEN")
 	testFile := "testdata/test.tzst"
 	params := network.UploadParams{
 		APIBaseURL:  baseURL,
@@ -38,7 +38,7 @@ func TestUpload(t *testing.T) {
 		ArchiveSize: 468,
 		CacheKey:    cacheKey,
 	}
-	logger := log.NewLogger()
+
 	logger.EnableDebugLog(true)
 
 	// When
