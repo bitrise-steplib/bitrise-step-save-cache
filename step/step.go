@@ -89,13 +89,13 @@ func (step SaveCacheStep) ProcessConfig() (*Config, error) {
 		finalPaths = append(finalPaths, absPath)
 	}
 
-	apiBaseURL := step.envRepo.Get("BITRISEIO_CACHE_SERVICE_URL")
+	apiBaseURL := step.envRepo.Get("BITRISEIO_ABCS_API_URL")
 	if apiBaseURL == "" {
-		return nil, fmt.Errorf("the secret 'BITRISEIO_CACHE_SERVICE_URL' is not defined")
+		return nil, fmt.Errorf("the secret 'BITRISEIO_ABCS_API_URL' is not defined")
 	}
-	apiAccessToken := step.envRepo.Get("BITRISEIO_CACHE_SERVICE_ACCESS_TOKEN")
+	apiAccessToken := step.envRepo.Get("BITRISEIO_ABCS_ACCESS_TOKEN")
 	if apiAccessToken == "" {
-		return nil, fmt.Errorf("the secret 'BITRISEIO_CACHE_SERVICE_ACCESS_TOKEN' is not defined")
+		return nil, fmt.Errorf("the secret 'BITRISEIO_ABCS_ACCESS_TOKEN' is not defined")
 	}
 
 	return &Config{
