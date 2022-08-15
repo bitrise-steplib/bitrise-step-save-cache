@@ -50,16 +50,19 @@ func Test_ProcessConfig(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "Multiple file paths",
+			name: "Multiple file paths with wildcards",
 			inputParser: fakeInputParser{
 				verbose: false,
 				key:     "cache-key",
-				paths:   "testdata/dummy_file.txt\ntestdata/subfolder/nested_file.txt",
+				paths:   "testdata/dummy_file.txt\ntestdata/**/nested_*.txt",
 			},
 			want: &Config{
-				Verbose:        false,
-				Key:            "cache-key",
-				Paths:          []string{filepath.Join(testdataAbsPath, "dummy_file.txt"), filepath.Join(testdataAbsPath, "subfolder", "nested_file.txt")},
+				Verbose: false,
+				Key:     "cache-key",
+				Paths: []string{
+					filepath.Join(testdataAbsPath, "dummy_file.txt"),
+					filepath.Join(testdataAbsPath, "subfolder", "nested_file.txt"),
+				},
 				APIBaseURL:     "fake cache service URL",
 				APIAccessToken: "fake cache service access token",
 			},
