@@ -38,7 +38,7 @@ func TestUpload(t *testing.T) {
 		ArchiveSize: 468,
 		CacheKey:    cacheKey,
 	}
-	logger := log.NewLogger()
+
 	logger.EnableDebugLog(true)
 
 	// When
