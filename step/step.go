@@ -92,6 +92,8 @@ func (step SaveCacheStep) ProcessConfig() (*Config, error) {
 }
 
 func (step SaveCacheStep) Run(config Config) error {
+	tracker := newStepTracker(config, step.envRepo, step.logger)
+
 	step.logger.Println()
 	step.logger.Printf("Evaluating key template: %s", config.Key)
 	evaluatedKey, err := step.evaluateKey(config.Key)
@@ -102,12 +104,15 @@ func (step SaveCacheStep) Run(config Config) error {
 
 	step.logger.Println()
 	step.logger.Infof("Creating archive...")
-	compressionStartTIme := time.Now()
+	compressionStartTime := time.Now()
 	archivePath, err := step.compress(config.Paths)
 	if err != nil {
 		return fmt.Errorf("compression failed: %s", err)
 	}
-	step.logger.Donef("Archive created in %s", time.Since(compressionStartTIme).Round(time.Second))
+	compressionTime := time.Since(compressionStartTime).Round(time.Second)
+	tracker.logArchiveCompressed(compressionTime)
+	step.logger.Donef("Archive created in %s", compressionTime)
+
 	fileInfo, err := os.Stat(archivePath)
 	if err != nil {
 		return err
@@ -122,7 +127,10 @@ func (step SaveCacheStep) Run(config Config) error {
 	if err != nil {
 		return fmt.Errorf("cache upload failed: %w", err)
 	}
-	step.logger.Donef("Archive uploaded in %s", time.Since(uploadStartTime).Round(time.Second))
+	uploadTime := time.Since(uploadStartTime).Round(time.Second)
+	step.logger.Donef("Archive uploaded in %s", uploadTime)
+	tracker.logArchiveUploaded(uploadTime, fileInfo)
+	tracker.wait()
 
 	return nil
 }
