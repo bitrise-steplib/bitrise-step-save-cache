@@ -5,7 +5,7 @@ description: |
 
   #### About key-based caching
 
-  Key-based caching is a concept where cache archives are saved and restored using a unique cache key. One Bitrise project can have multiple cache archives stored simultaneously, and the **Restore Cache Step** downloads a cache archive associated with the key provided as a Step input. The **Save Cache** step is responsible for uploading the cache archive with an exact key.
+  Key-based caching is a concept where cache archives are saved and restored using a unique cache key. One Bitrise project can have multiple cache archives stored simultaneously, and the **Restore Cache Step** downloads a cache archive associated with the key provided as a Step input. The **Save Cache** Step is responsible for uploading the cache archive with an exact key.
 
   Caches can become outdated across builds when something changes in the project (for example, a dependency gets upgraded to a new version). In this case, a new (unique) cache key is needed to save the new cache contents. This is possible if the cache key is dynamic and changes based on the project state (for example, a checksum of the dependency lockfile is part of the cache key). If you use the same dynamic cache key when restoring the cache, the Step will download the most relevant cache archive available.
 
@@ -13,9 +13,9 @@ description: |
 
   #### Templates
 
-  The Step requires a string key to use when uploading a cache archive. In order to always download the most relevant cache archive for each build, the cache key input can contain template elements. The **Restore cache Step** evaluates the key template at runtime and the final key value can change based on the build environment or files in the repo. Similarly, the **Save cache** step also uses templates to compute a unique cache key when uploading a cache archive.
+  The Step requires a string key to use when uploading a cache archive. In order to always download the most relevant cache archive for each build, the cache key input can contain template elements. The **Restore cache Step** evaluates the key template at runtime and the final key value can change based on the build environment or files in the repo. Similarly, the **Save cache** Step also uses templates to compute a unique cache key when uploading a cache archive.
 
-  The following variables are supported in the cache key input:
+  The following variables are supported in the **Cache key** input:
 
   - `cache-key-{{ .Branch }}`: Current git branch the build runs on
   - `cache-key-{{ .CommitHash }}`: SHA-256 hash of the git commit the build runs on

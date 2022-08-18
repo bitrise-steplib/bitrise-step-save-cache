@@ -21,7 +21,7 @@ steps:
 
 #### Separate caches for each OS and architecture
 
-Cache is not guaranteed to work across different Bitrise Stacks (different OS or same OS but different CPU architecture). If a workflow runs on different stacks, it's a good idea to include the OS and architecture in the cache key:
+Cache is not guaranteed to work across different Bitrise Stacks (different OS or same OS but different CPU architecture). If a Workflow runs on different stacks, it's a good idea to include the OS and architecture in the **Cache key** input:
 
 ```yaml
 steps:
@@ -33,7 +33,7 @@ steps:
 
 #### Multiple independent caches
 
-You can add multiple instances of this step to a workflow:
+You can add multiple instances of this Step to a Workflow:
 
 ```yaml
 steps:
