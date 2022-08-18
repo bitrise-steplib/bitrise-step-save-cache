@@ -9,8 +9,6 @@ Saves build cache using a cache key. This Step needs to be used in combination w
 
 Saves build cache using a cache key. This Step needs to be used in combination with **Restore Cache**.
 
-**Beta status**: while this step is in beta, there are no usage restrictions or costs associated with using cache in builds.
-
 #### About key-based caching
 
 Key-based caching is a concept where cache archives are saved and restored using a unique cache key. One Bitrise project can have multiple cache archives stored simultaneously, and the **Restore Cache Step** downloads a cache archive associated with the key provided as a Step input. The **Save Cache** step is responsible for uploading the cache archive with an exact key.
@@ -63,6 +61,8 @@ Unlike this Step, the **Restore cache** Step can define multiple keys as fallbac
 Add this step directly to your workflow in the [Bitrise Workflow Editor](https://devcenter.bitrise.io/steps-and-workflows/steps-and-workflows-index/).
 
 You can also run this step directly with [Bitrise CLI](https://github.com/bitrise-io/bitrise).
+
+⚠️ **Beta status**: While this Step is in beta, everyone can use it without restrictions, quotas or costs.
 
 ### Examples
 
