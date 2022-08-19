@@ -82,13 +82,13 @@ func (c apiClient) prepareUpload(requestBody prepareUploadRequest) (prepareUploa
 	return response, nil
 }
 
-func (c apiClient) uploadArchive(archivePath string, uploadURL string, headers map[string]string) error {
+func (c apiClient) uploadArchive(archivePath, uploadMethod, uploadURL string, headers map[string]string) error {
 	file, err := os.Open(archivePath)
 	if err != nil {
 		return err
 	}
 
-	req, err := retryablehttp.NewRequest("PUT", uploadURL, file)
+	req, err := retryablehttp.NewRequest(uploadMethod, uploadURL, file)
 	if err != nil {
 		return err
 	}
@@ -135,5 +135,4 @@ func (c apiClient) acknowledgeUpload(uploadID string) error {
 		}
 		return fmt.Errorf("HTTP %d: %s", resp.StatusCode, errorResp)
 	}
-
 }
