@@ -140,17 +140,18 @@ func (step SaveCacheStep) evaluatePaths(pathInput string) ([]string, error) {
 
 	// Expand wildcard paths
 	var expandedPaths []string
-	workingDir, err := os.Getwd()
-	if err != nil {
-		return nil, err
-	}
 	for _, path := range pathSlice {
 		if !strings.Contains(path, "*") {
 			expandedPaths = append(expandedPaths, path)
 			continue
 		}
 
-		matches, err := doublestar.Glob(os.DirFS(workingDir), path)
+		base, pattern := doublestar.SplitPattern(path)
+		absBase, err := step.pathModifier.AbsPath(base) // resolves ~/ and expands any envs
+		if err != nil {
+			return nil, err
+		}
+		matches, err := doublestar.Glob(os.DirFS(absBase), pattern)
 		if matches == nil {
 			step.logger.Warnf("No match for path pattern: %s", path)
 			continue
@@ -159,7 +160,10 @@ func (step SaveCacheStep) evaluatePaths(pathInput string) ([]string, error) {
 			step.logger.Warnf("Error in path pattern '%s': %w", path, err)
 			continue
 		}
-		expandedPaths = append(expandedPaths, matches...)
+
+		for _, match := range matches {
+			expandedPaths = append(expandedPaths, filepath.Join(base, match))
+		}
 	}
 
 	// Validate and sanitize paths
