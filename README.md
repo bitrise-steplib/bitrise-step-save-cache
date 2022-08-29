@@ -121,7 +121,7 @@ steps:
 
 | Key | Description | Flags | Default |
 | --- | --- | --- | --- |
-| `key` | Key used for saving a cache archive.  The key supports template elements for creating dynamic cache keys. These dynamic keys change the final key value based on the build environment or files in the repo in order to create new cache archives.  See the Step description for more details and examples. | required |  |
+| `key` | Key used for saving a cache archive.  The key supports template elements for creating dynamic cache keys. These dynamic keys change the final key value based on the build environment or files in the repo in order to create new cache archives. See the Step description for more details and examples.  The maximum length of a key is 512 characters (longer keys get truncated). Commas (`,`) are not allowed in keys. | required |  |
 | `paths` | List of files and folders to include in the cache.  The path can contain wildcards (`*` and `**`) that are evaluated at runtime. | required |  |
 | `verbose` | Enable logging additional information for troubleshooting | required | `false` |
 </details>
