@@ -59,7 +59,7 @@ func Test_ProcessConfig(t *testing.T) {
 			inputParser: fakeInputParser{
 				verbose: false,
 				key:     "cache-key",
-				paths:   "~/.bash_*",
+				paths:   "~/.bash_h*",
 			},
 			want: &Config{
 				Verbose:        false,
