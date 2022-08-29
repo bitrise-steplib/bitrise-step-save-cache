@@ -1,6 +1,7 @@
 package step
 
 import (
+	"os"
 	"path/filepath"
 	"reflect"
 	"testing"
@@ -14,7 +15,11 @@ import (
 func Test_ProcessConfig(t *testing.T) {
 	testdataAbsPath, err := filepath.Abs("testdata")
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Fatalf(err.Error())
+	}
+	homeAbsPath, err := os.UserHomeDir()
+	if err != nil {
+		t.Fatalf(err.Error())
 	}
 
 	tests := []struct {
@@ -44,6 +49,22 @@ func Test_ProcessConfig(t *testing.T) {
 				Verbose:        false,
 				Key:            "cache-key",
 				Paths:          []string{filepath.Join(testdataAbsPath, "dummy_file.txt")},
+				APIBaseURL:     "fake cache service URL",
+				APIAccessToken: "fake cache service access token",
+			},
+			wantErr: false,
+		},
+		{
+			name: "Absolute path and tilde in pattern path",
+			inputParser: fakeInputParser{
+				verbose: false,
+				key:     "cache-key",
+				paths:   "~/.bash_*",
+			},
+			want: &Config{
+				Verbose:        false,
+				Key:            "cache-key",
+				Paths:          []string{filepath.Join(homeAbsPath, ".bash_history")},
 				APIBaseURL:     "fake cache service URL",
 				APIAccessToken: "fake cache service access token",
 			},
