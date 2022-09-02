@@ -46,6 +46,7 @@ workflows:
     - path::./:
         title: Execute step
         run_if: "true"
+        is_skippable: false
         inputs:
         - key: node-modules-{{ checksum "package-lock.json" }}
         - paths: |-
@@ -67,6 +68,7 @@ workflows:
     - path::./:
         title: Execute step
         run_if: "true"
+        is_skippable: false
         inputs:
         - key: node-modules-{{ checksum "package-lock.json" }}
         - paths: |-
@@ -92,6 +94,7 @@ workflows:
     - path::./:
         title: Execute step
         run_if: "true"
+        is_skippable: false
         inputs:
         - key: gradle-cache-{{ checksum "**/*.gradle" "**/gradle-wrapper.properties" }}
         - paths: |-
