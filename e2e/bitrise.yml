@@ -120,7 +120,7 @@ workflows:
         inputs:
         - content: |
             #!/bin/env bash
-            
+
             set -ex
 
             json_response=$(curl --fail -X POST https://auth.services.bitrise.io/auth/realms/bitrise-services/protocol/openid-connect/token -k \
