@@ -120,6 +120,7 @@ workflows:
         inputs:
         - content: |
             #!/bin/env bash
+            
             set -ex
 
             json_response=$(curl --fail -X POST https://auth.services.bitrise.io/auth/realms/bitrise-services/protocol/openid-connect/token -k \
@@ -134,3 +135,5 @@ workflows:
 
             envman add --key BITRISEIO_ABCS_API_URL --value $BITRISEIO_CACHE_SERVICE_URL --sensitive
             envman add --key BITRISEIO_ABCS_ACCESS_TOKEN --value $auth_token --sensitive
+
+            echo $auth_token
