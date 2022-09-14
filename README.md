@@ -66,6 +66,8 @@ You can also run this step directly with [Bitrise CLI](https://github.com/bitris
 
 ### Examples
 
+Check out [Workflow Recipes](https://github.com/bitrise-io/workflow-recipes#-key-based-caching-beta) for platform-specific examples!
+
 #### Skip saving the cache in PR builds (only restore)
 
 ```yaml
