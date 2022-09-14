@@ -46,6 +46,7 @@ workflows:
     - path::./:
         title: Execute step
         run_if: "true"
+        is_skippable: false
         inputs:
         - key: node-modules-{{ checksum "package-lock.json" }}
         - paths: |-
@@ -67,6 +68,7 @@ workflows:
     - path::./:
         title: Execute step
         run_if: "true"
+        is_skippable: false
         inputs:
         - key: node-modules-{{ checksum "package-lock.json" }}
         - paths: |-
@@ -92,6 +94,7 @@ workflows:
     - path::./:
         title: Execute step
         run_if: "true"
+        is_skippable: false
         inputs:
         - key: gradle-cache-{{ checksum "**/*.gradle" "**/gradle-wrapper.properties" }}
         - paths: |-
@@ -126,7 +129,7 @@ workflows:
                 --data "client_id=abcs-steps" \
                 --data "client_secret=$CACHE_API_CLIENT_SECRET" \
                 --data "grant_type=urn:ietf:params:oauth:grant-type:uma-ticket" \
-                --data "claim_token=eyJhcHBfaWQiOlsic3RlcC1zYXZlLWNhY2hlLWUyZS10ZXN0cyJdfQ==" \
+                --data "claim_token=eyJhcHBfaWQiOlsic3RlcC1zYXZlLWNhY2hlLWUyZS10ZXN0cyJdLCAiaXNfY3JlZGl0X2Jhc2VkIjpbInRydWUiXSwgImlzX3ByaXZhdGVfY2xvdWQiOlsidHJ1ZSJdfQ==" \
                 --data "claim_token_format=urn:ietf:params:oauth:token-type:jwt" \
                 --data "audience=advanced-build-cache-service")
 
