@@ -27,16 +27,7 @@ func run() int {
 
 	exitCode := 0
 
-	config, err := cacheStep.ProcessConfig()
-	if err != nil {
-		logger.Errorf(err.Error())
-		exitCode = 1
-		return exitCode
-	}
-
-	logger.EnableDebugLog(config.Verbose)
-
-	if err := cacheStep.Run(*config); err != nil {
+	if err := cacheStep.Run(); err != nil {
 		logger.Errorf(err.Error())
 		exitCode = 1
 		return exitCode
