@@ -8,23 +8,6 @@ app:
   - CACHE_API_CLIENT_SECRET: $CACHE_API_CLIENT_SECRET
 
 workflows:
-  test_integration:
-    before_run:
-    - _generate_api_token
-    steps:
-    - script:
-        title: Integration tests
-        deps:
-          brew:
-          - name: zstd
-          apt_get:
-          - name: zstd
-        inputs:
-        - content: |-
-            #!/bin/bash
-            set -ex
-            go test -v -tags integration ./integration
-
   test_npm:
     envs:
     - TEST_APP_URL: https://github.com/bitrise-io/Bitrise-React-Native-Sample
@@ -52,6 +35,22 @@ workflows:
         - paths: |-
             node_modules
         - verbose: "true"
+    - script:
+        title: Remove node_modules
+        inputs:
+        - content: rm -rf node_modules
+    - restore-cache:
+        run_if: "true"
+        is_skippable: false
+        inputs:
+        - key: node-modules-{{ checksum "package-lock.json" }}
+        - verbose: "true"
+    - script:
+        title: Install dependencies again
+        inputs:
+        - content: |-
+            set -ex
+            npm install
 
   test_empty:
     description: |
@@ -129,7 +128,7 @@ workflows:
                 --data "client_id=abcs-steps" \
                 --data "client_secret=$CACHE_API_CLIENT_SECRET" \
                 --data "grant_type=urn:ietf:params:oauth:grant-type:uma-ticket" \
-                --data "claim_token=eyJhcHBfaWQiOlsic3RlcC1zYXZlLWNhY2hlLWUyZS10ZXN0cyJdLCAiaXNfY3JlZGl0X2Jhc2VkIjpbInRydWUiXSwgImlzX3ByaXZhdGVfY2xvdWQiOlsidHJ1ZSJdfQ==" \
+                --data "claim_token=eyJhcHBfaWQiOlsic3RlcC1zYXZlLWNhY2hlLWUyZS10ZXN0cyJdLCAiYWNjZXNzX2dyYW50ZWQiOlsidHJ1ZSJdfQ==" \
                 --data "claim_token_format=urn:ietf:params:oauth:token-type:jwt" \
                 --data "audience=advanced-build-cache-service")
 
