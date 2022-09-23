@@ -52,6 +52,7 @@ func (step SaveCacheStep) Run() error {
 
 	saver := cache.NewSaver(step.envRepo, step.logger, step.pathProvider, step.pathModifier, step.pathChecker)
 	return saver.Save(cache.SaveCacheInput{
+		StepId:  "save-cache",
 		Verbose: input.Verbose,
 		Key:     input.Key,
 		Paths:   strings.Split(input.Paths, "\n"),
