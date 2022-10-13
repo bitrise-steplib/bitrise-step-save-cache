@@ -13,9 +13,10 @@ import (
 )
 
 type Input struct {
-	Verbose bool   `env:"verbose,required"`
-	Key     string `env:"key,required"`
-	Paths   string `env:"paths,required"`
+	Verbose     bool   `env:"verbose,required"`
+	Key         string `env:"key,required"`
+	Paths       string `env:"paths,required"`
+	IsKeyUnique bool   `env:"is_key_unique"`
 }
 
 type SaveCacheStep struct {
@@ -52,9 +53,10 @@ func (step SaveCacheStep) Run() error {
 
 	saver := cache.NewSaver(step.envRepo, step.logger, step.pathProvider, step.pathModifier, step.pathChecker)
 	return saver.Save(cache.SaveCacheInput{
-		StepId:  "save-cache",
-		Verbose: input.Verbose,
-		Key:     input.Key,
-		Paths:   strings.Split(input.Paths, "\n"),
+		StepId:      "save-cache",
+		Verbose:     input.Verbose,
+		Key:         input.Key,
+		Paths:       strings.Split(input.Paths, "\n"),
+		IsKeyUnique: input.IsKeyUnique,
 	})
 }

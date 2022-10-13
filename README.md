@@ -50,6 +50,10 @@ The most straightforward use case is when both the **Save cache** and **Restore 
 
 Unlike this Step, the **Restore cache** Step can define multiple keys as fallbacks when there is no match for the first cache key. See the docs of the **Restore cache** Step for more details.
 
+#### Skip saving the cache
+
+The Step can decide to skip saving a new cache entry to avoid unnecessary work. This happens when there is a previously restored cache in the same workflow and the new cache would have the same contents as the one restored. Make sure to use unique cache keys with a checksum, and enable the **Unique cache key** input for the most optimal execution.
+
 #### Related steps
 
 [Restore cache](https://github.com/bitrise-steplib/bitrise-step-restore-cache/)
@@ -126,6 +130,7 @@ steps:
 | `key` | Key used for saving a cache archive.  The key supports template elements for creating dynamic cache keys. These dynamic keys change the final key value based on the build environment or files in the repo in order to create new cache archives. See the Step description for more details and examples.  The maximum length of a key is 512 characters (longer keys get truncated). Commas (`,`) are not allowed in keys. | required |  |
 | `paths` | List of files and folders to include in the cache.  The path can contain wildcards (`*` and `**`) that are evaluated at runtime. | required |  |
 | `verbose` | Enable logging additional information for troubleshooting | required | `false` |
+| `is_key_unique` | Enabling this allows the Step to skip creating a new cache archive when the workflow previously restored the cache with the same key.  This requires the cache key to be unique, so that the key changes whenever the files in the cache change. In practice, this means adding a `checksum` part to the key template with a file that describes the cache content (such as a lockfile).  Example of a cache key where this can be safely turned on: `npm-cache-{{ checksum "package-lock.json" }}`. On the other hand, `my-cache-{{ .OS }}-{{ .Arch }}` is not unique (even though it uses templates).  Note: the Step can still skip uploading a cache when this input is `false`, it just needs to create the archive first to compute its checksum (which takes time). |  | `false` |
 </details>
 
 <details>
