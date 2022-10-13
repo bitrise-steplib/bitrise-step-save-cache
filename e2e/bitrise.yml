@@ -39,7 +39,7 @@ workflows:
         title: Remove node_modules
         inputs:
         - content: rm -rf node_modules
-    - restore-cache:
+    - git::https://github.com/bitrise-steplib/bitrise-step-restore-cache.git@main:
         run_if: "true"
         is_skippable: false
         inputs:
@@ -101,6 +101,55 @@ workflows:
             ~/.gradle/wrapper
             .gradle/configuration-cache
         - verbose: "true"
+
+  test_save_skip:
+    envs:
+    - TEST_APP_URL: https://github.com/bitrise-io/Bitrise-React-Native-Sample
+    - BRANCH: master
+    before_run:
+    - _generate_api_token
+    - _setup
+    steps:
+    - change-workdir:
+        title: Switch working dir to _tmp
+        inputs:
+        - path: ./_tmp
+    - script:
+        title: Install dependencies
+        inputs:
+        - content: |-
+            set -ex
+            npm ci
+    - path::./:
+        title: Execute step for first time
+        run_if: "true"
+        is_skippable: false
+        inputs:
+        - key: node-modules-{{ checksum "package-lock.json" }}
+        - paths: |-
+            node_modules
+        - verbose: "true"
+        - is_key_unique: "true"
+    - script:
+        title: Remove node_modules
+        inputs:
+        - content: rm -rf node_modules
+    - git::https://github.com/bitrise-steplib/bitrise-step-restore-cache.git@main:
+        run_if: "true"
+        is_skippable: false
+        inputs:
+        - key: node-modules-{{ checksum "package-lock.json" }}
+        - verbose: "true"
+    - path::./:
+        title: Execute step after restore
+        run_if: "true"
+        is_skippable: false
+        inputs:
+        - key: node-modules-{{ checksum "package-lock.json" }}
+        - paths: |-
+            node_modules
+        - verbose: "true"
+        - is_key_unique: "true"
 
   _setup:
     steps:
