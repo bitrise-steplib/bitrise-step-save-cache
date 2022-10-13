@@ -39,7 +39,7 @@ workflows:
         title: Remove node_modules
         inputs:
         - content: rm -rf node_modules
-    - restore-cache:
+    - git::https://github.com/bitrise-steplib/bitrise-step-restore-cache.git@main:
         run_if: "true"
         is_skippable: false
         inputs:
@@ -134,7 +134,7 @@ workflows:
         title: Remove node_modules
         inputs:
         - content: rm -rf node_modules
-    - restore-cache:
+    - git::https://github.com/bitrise-steplib/bitrise-step-restore-cache.git@main:
         run_if: "true"
         is_skippable: false
         inputs:
