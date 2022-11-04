@@ -31,7 +31,8 @@ workflows:
         run_if: "true"
         is_skippable: false
         inputs:
-        - key: node-modules-{{ checksum "package-lock.json" }}
+        - key: |
+            {{ .OS }}-{{ .Arch }}-node-modules-{{ checksum "package-lock.json" }}
         - paths: |-
             node_modules
         - verbose: "true"
@@ -43,7 +44,8 @@ workflows:
         run_if: "true"
         is_skippable: false
         inputs:
-        - key: node-modules-{{ checksum "package-lock.json" }}
+        - key: |
+            {{ .OS }}-{{ .Arch }}-node-modules-{{ checksum "package-lock.json" }}
         - verbose: "true"
     - script:
         title: Install dependencies again
@@ -95,7 +97,8 @@ workflows:
         run_if: "true"
         is_skippable: false
         inputs:
-        - key: gradle-cache-{{ checksum "**/*.gradle" "**/gradle-wrapper.properties" }}
+        - key: |
+            {{ .OS }}-{{ .Arch }}-gradle-cache-{{ checksum "**/*.gradle" "**/gradle-wrapper.properties" }}
         - paths: |-
             ~/.gradle/caches
             ~/.gradle/wrapper
@@ -125,7 +128,8 @@ workflows:
         run_if: "true"
         is_skippable: false
         inputs:
-        - key: node-modules-{{ checksum "package-lock.json" }}
+        - key: |-
+            {{ .OS }}-{{ .Arch }}-node-modules-{{ checksum "package-lock.json" }}
         - paths: |-
             node_modules
         - verbose: "true"
@@ -138,14 +142,16 @@ workflows:
         run_if: "true"
         is_skippable: false
         inputs:
-        - key: node-modules-{{ checksum "package-lock.json" }}
+        - key: |-
+            {{ .OS }}-{{ .Arch }}-node-modules-{{ checksum "package-lock.json" }}
         - verbose: "true"
     - path::./:
         title: Execute step after restore
         run_if: "true"
         is_skippable: false
         inputs:
-        - key: node-modules-{{ checksum "package-lock.json" }}
+        - key: |-
+            {{ .OS }}-{{ .Arch }}-node-modules-{{ checksum "package-lock.json" }}
         - paths: |-
             node_modules
         - verbose: "true"
