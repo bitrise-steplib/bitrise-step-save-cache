@@ -7,11 +7,12 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/bitrise-io/go-steputils/tools"
 	"github.com/bitrise-io/go-steputils/v2/cache/compression"
 	"github.com/bitrise-io/go-steputils/v2/cache/keytemplate"
 	"github.com/bitrise-io/go-steputils/v2/cache/network"
+	"github.com/bitrise-io/go-steputils/v2/export"
 	"github.com/bitrise-io/go-steputils/v2/stepconf"
+	"github.com/bitrise-io/go-utils/v2/command"
 	"github.com/bitrise-io/go-utils/v2/env"
 	"github.com/bitrise-io/go-utils/v2/log"
 	"github.com/docker/go-units"
@@ -38,8 +39,9 @@ type restoreCacheConfig struct {
 }
 
 type restorer struct {
-	envRepo env.Repository
-	logger  log.Logger
+	envRepo    env.Repository
+	logger     log.Logger
+	cmdFactory command.Factory
 }
 
 type downloadResult struct {
@@ -48,8 +50,8 @@ type downloadResult struct {
 }
 
 // NewRestorer ...
-func NewRestorer(envRepo env.Repository, logger log.Logger) *restorer {
-	return &restorer{envRepo: envRepo, logger: logger}
+func NewRestorer(envRepo env.Repository, logger log.Logger, cmdFactory command.Factory) *restorer {
+	return &restorer{envRepo: envRepo, logger: logger, cmdFactory: cmdFactory}
 }
 
 // Restore ...
@@ -113,9 +115,9 @@ func (r *restorer) createConfig(input RestoreCacheInput) (restoreCacheConfig, er
 	if apiBaseURL == "" {
 		return restoreCacheConfig{}, fmt.Errorf("the secret 'BITRISEIO_ABCS_API_URL' is not defined")
 	}
-	apiAccessToken := r.envRepo.Get("BITRISEIO_ABCS_ACCESS_TOKEN")
+	apiAccessToken := r.envRepo.Get("BITRISEIO_BITRISE_SERVICES_ACCESS_TOKEN")
 	if apiAccessToken == "" {
-		return restoreCacheConfig{}, fmt.Errorf("the secret 'BITRISEIO_ABCS_ACCESS_TOKEN' is not defined")
+		return restoreCacheConfig{}, fmt.Errorf("the secret 'BITRISEIO_BITRISE_SERVICES_ACCESS_TOKEN' is not defined")
 	}
 
 	keys, err := r.evaluateKeys(input.Keys)
@@ -192,7 +194,8 @@ func (r *restorer) exposeCacheHit(result downloadResult) error {
 	r.logger.Debugf("Archive checksum: %s", checksum)
 
 	envKey := cacheHitEnvVarPrefix + result.matchedKey
-	err = tools.ExportEnvironmentWithEnvman(envKey, checksum)
+	exporter := export.NewExporter(r.cmdFactory)
+	err = exporter.ExportOutput(envKey, checksum)
 	if err != nil {
 		return err
 	}
