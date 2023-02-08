@@ -1,4 +1,4 @@
-title: Save Cache (Beta)
+title: Save Cache
 summary: Saves build cache using a cache key. This Step needs to be used in combination with **Restore Cache**.
 description: |
   Saves build cache using a cache key. This Step needs to be used in combination with **Restore Cache**.
@@ -92,7 +92,7 @@ inputs:
     description: |-
       List of files and folders to include in the cache.
 
-      The path can contain wildcards (`*` and `**`) that are evaluated at runtime.
+      Add one path per line. Each path can contain wildcards (`*` and `**`) that are evaluated at runtime.
     is_required: true
 
 - verbose: "false"
@@ -116,3 +116,6 @@ inputs:
       Example of a cache key where this can be safely turned on: `npm-cache-{{ checksum "package-lock.json" }}`. On the other hand, `my-cache-{{ .OS }}-{{ .Arch }}` is not unique (even though it uses templates).
 
       Note: the Step can still skip uploading a cache when this input is `false`, it just needs to create the archive first to compute its checksum (which takes time).
+    value_options:
+    - "true"
+    - "false"

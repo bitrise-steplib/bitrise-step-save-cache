@@ -1,4 +1,4 @@
-# Save Cache (Beta)
+# Save Cache
 
 [![Step changelog](https://shields.io/github/v/release/bitrise-steplib/bitrise-step-save-cache?include_prereleases&label=changelog&color=blueviolet)](https://github.com/bitrise-steplib/bitrise-step-save-cache/releases)
 
@@ -66,8 +66,6 @@ Add this step directly to your workflow in the [Bitrise Workflow Editor](https:/
 
 You can also run this step directly with [Bitrise CLI](https://github.com/bitrise-io/bitrise).
 
-⚠️ **Beta status**: While this Step is in beta, everyone can use it without restrictions, quotas or costs.
-
 ### Examples
 
 Check out [Workflow Recipes](https://github.com/bitrise-io/workflow-recipes#-key-based-caching-beta) for platform-specific examples!
@@ -128,7 +126,7 @@ steps:
 | Key | Description | Flags | Default |
 | --- | --- | --- | --- |
 | `key` | Key used for saving a cache archive.  The key supports template elements for creating dynamic cache keys. These dynamic keys change the final key value based on the build environment or files in the repo in order to create new cache archives. See the Step description for more details and examples.  The maximum length of a key is 512 characters (longer keys get truncated). Commas (`,`) are not allowed in keys. | required |  |
-| `paths` | List of files and folders to include in the cache.  The path can contain wildcards (`*` and `**`) that are evaluated at runtime. | required |  |
+| `paths` | List of files and folders to include in the cache.  Add one path per line. Each path can contain wildcards (`*` and `**`) that are evaluated at runtime. | required |  |
 | `verbose` | Enable logging additional information for troubleshooting | required | `false` |
 | `is_key_unique` | Enabling this allows the Step to skip creating a new cache archive when the workflow previously restored the cache with the same key.  This requires the cache key to be unique, so that the key changes whenever the files in the cache change. In practice, this means adding a `checksum` part to the key template with a file that describes the cache content (such as a lockfile).  Example of a cache key where this can be safely turned on: `npm-cache-{{ checksum "package-lock.json" }}`. On the other hand, `my-cache-{{ .OS }}-{{ .Arch }}` is not unique (even though it uses templates).  Note: the Step can still skip uploading a cache when this input is `false`, it just needs to create the archive first to compute its checksum (which takes time). |  | `false` |
 </details>

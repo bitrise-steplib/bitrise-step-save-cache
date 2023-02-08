@@ -1,5 +1,3 @@
-⚠️ **Beta status**: While this Step is in beta, everyone can use it without restrictions, quotas or costs.
-
 ### Examples
 
 Check out [Workflow Recipes](https://github.com/bitrise-io/workflow-recipes#-key-based-caching-beta) for platform-specific examples!
