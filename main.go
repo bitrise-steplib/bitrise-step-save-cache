@@ -6,7 +6,7 @@ import (
 	"github.com/bitrise-io/go-steputils/v2/stepconf"
 	"github.com/bitrise-io/go-utils/v2/command"
 	"github.com/bitrise-io/go-utils/v2/env"
-	. "github.com/bitrise-io/go-utils/v2/exitcode"
+	"github.com/bitrise-io/go-utils/v2/exitcode"
 	"github.com/bitrise-io/go-utils/v2/log"
 	"github.com/bitrise-io/go-utils/v2/pathutil"
 	"github.com/bitrise-steplib/bitrise-step-save-cache/step"
@@ -17,7 +17,7 @@ func main() {
 	os.Exit(int(exitCode))
 }
 
-func run() ExitCode {
+func run() exitcode.ExitCode {
 	logger := log.NewLogger()
 	envRepo := env.NewRepository()
 	inputParser := stepconf.NewInputParser(envRepo)
@@ -29,8 +29,8 @@ func run() ExitCode {
 
 	if err := cacheStep.Run(); err != nil {
 		logger.Errorf(err.Error())
-		return Failure
+		return exitcode.Failure
 	}
 
-	return Success
+	return exitcode.Success
 }
