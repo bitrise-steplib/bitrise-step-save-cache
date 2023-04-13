@@ -3,7 +3,7 @@ module github.com/bitrise-steplib/bitrise-step-save-cache
 go 1.17
 
 require (
-	github.com/bitrise-io/go-steputils/v2 v2.0.0-alpha.17.0.20230413114223-b5c1015d8bc3
+	github.com/bitrise-io/go-steputils/v2 v2.0.0-alpha.18
 	github.com/bitrise-io/go-utils/v2 v2.0.0-alpha.15
 )
 
