@@ -4,6 +4,8 @@ github.com/bitrise-io/go-steputils/v2 v2.0.0-alpha.21.0.20231113023611-96dedffc3
 github.com/bitrise-io/go-steputils/v2 v2.0.0-alpha.21.0.20231113023611-96dedffc3bf0/go.mod h1:YeLAqkNuns7tiZNAlGJ8kOWvSEZy3SOKAQCv2CeWk5A=
 github.com/bitrise-io/go-steputils/v2 v2.0.0-alpha.21.0.20231113050439-4bf51657dd05 h1:P4jv99Cd7/e9TTOXJDLa/2kMHb0UvcutqY8oe326SP4=
 github.com/bitrise-io/go-steputils/v2 v2.0.0-alpha.21.0.20231113050439-4bf51657dd05/go.mod h1:YeLAqkNuns7tiZNAlGJ8kOWvSEZy3SOKAQCv2CeWk5A=
+github.com/bitrise-io/go-steputils/v2 v2.0.0-alpha.21.0.20231113052351-2d2f294f3011 h1:/8Zb+TFIi9yzCLRHUzc7DXUSjSK2GkluBbrcZAd0uPI=
+github.com/bitrise-io/go-steputils/v2 v2.0.0-alpha.21.0.20231113052351-2d2f294f3011/go.mod h1:YeLAqkNuns7tiZNAlGJ8kOWvSEZy3SOKAQCv2CeWk5A=
 github.com/bitrise-io/go-utils v1.0.1 h1:e7mepVBkVN1DXRPESNXb0djEw6bxB6B93p/Q74zzcvk=
 github.com/bitrise-io/go-utils v1.0.1/go.mod h1:ZY1DI+fEpZuFpO9szgDeICM4QbqoWVt0RSY3tRI1heY=
 github.com/bitrise-io/go-utils/v2 v2.0.0-alpha.13/go.mod h1:gZWtM7PLn1VOroa4gN1La/24aRVc0jg5R701jTsPaO8=
