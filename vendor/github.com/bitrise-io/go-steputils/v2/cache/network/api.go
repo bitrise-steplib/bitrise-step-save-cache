@@ -10,6 +10,8 @@ import (
 	"net/url"
 	"os"
 	"strings"
+	"sync"
+	"time"
 
 	"github.com/bitrise-io/go-utils/v2/log"
 	"github.com/hashicorp/go-retryablehttp"
@@ -112,6 +114,9 @@ func (c apiClient) prepareUpload(requestBody prepareUploadRequest) (prepareUploa
 // Data can be either byte[] or io.ReaderSeeker
 func (c apiClient) uploadArchiveChunk(uploadURL uploadURL, data interface{}, size int64) (string, error) {
 
+	fmt.Printf("Uploading archive chunk: %s \n\r", uploadURL.URL)
+	fmt.Printf("Chunk size: %d \n\r", size)
+
 	switch body := data.(type) {
 	case []byte, io.ReadSeeker:
 		// do nothing
@@ -159,23 +164,22 @@ func (c apiClient) uploadArchiveChunk(uploadURL uploadURL, data interface{}, siz
 	}
 
 	etag := resp.Header.Get("ETag")
+	fmt.Printf("Etag %s for %s of size %v \n\r", etag, uploadURL.URL, size)
 
 	return etag, nil
 }
 
 func (c apiClient) uploadArchive(archivePath string, chunkSize, chunkCount, lastChunkSize int, uploadURLs []uploadURL) ([]string, error) {
+
+	fmt.Printf("Uploading archive: %s \n\r", archivePath)
+	fmt.Printf("Chunk size, count, last chunk size: %d, %d, %d \n\r", chunkSize, chunkCount, lastChunkSize)
+	fmt.Printf("Upload urls: %+v \n\r", uploadURLs)
+
 	file, err := os.Open(archivePath)
 	if err != nil {
 		return nil, fmt.Errorf("open file: %s", err)
 	}
-	defer func(file *os.File) {
-		err := file.Close()
-		if err != nil {
-			c.logger.Errorf("failed to close file: %s", err)
-		}
-	}(file)
-
-	etags := make([]string, 0, chunkCount)
+	defer file.Close()
 
 	if chunkCount == 1 {
 		fileInfo, err := os.Stat(archivePath)
@@ -191,29 +195,92 @@ func (c apiClient) uploadArchive(archivePath string, chunkSize, chunkCount, last
 		return nil, nil
 	}
 
-	c.logger.Debugf("Uploading %d chunks, %dB each", chunkCount, chunkSize)
-
-	for i := 0; i < chunkCount; i++ {
-		chunkData, err := io.ReadAll(io.NewSectionReader(file, int64(i)*int64(chunkSize), int64(chunkSize)))
-		if err != nil {
-			return nil, fmt.Errorf("read chunk: %s", err)
-		}
-
-		if i < chunkCount-1 && len(chunkData) != chunkSize {
-			c.logger.Warnf("chunk size mismatch, expected %d, got %d", chunkSize, len(chunkData))
-		}
-		if i == chunkCount-1 && len(chunkData) != lastChunkSize {
-			c.logger.Warnf("last chunk size mismatch, expected %d, got %d", lastChunkSize, len(chunkData))
-		}
-
-		c.logger.Debugf("Uploading chunk %d to %s", i, uploadURLs[i].URL)
-		etag, err := c.uploadArchiveChunk(uploadURLs[i], chunkData, int64(len(chunkData)))
-		if err != nil {
-			return nil, fmt.Errorf("upload chunk part %d: %s", i, err)
-		}
-		etags = append(etags, etag)
+	type Job struct {
+		ChunkNumber int
+		ChunkStart  int64
+		ChunkSize   int64
+		UploadURL   uploadURL
 	}
 
+	jobs := make(chan Job, chunkCount)
+	results := make(chan struct {
+		ChunkNumber int
+		ChunkSize   int64
+		ETag        string
+	}, chunkCount)
+	errors := make(chan error, chunkCount)
+	wg := sync.WaitGroup{}
+
+	worker := func() {
+		for job := range jobs {
+			time.Sleep(30 * time.Second) // Simulated processing delay
+
+			chunkData, err := io.ReadAll(io.NewSectionReader(file, job.ChunkStart, job.ChunkSize))
+			if err != nil {
+				errors <- fmt.Errorf("read chunk %d: %s", job.ChunkNumber, err)
+				wg.Done()
+				continue
+			}
+
+			fmt.Printf("Uploading chunk %d to %s, size: %v, chunk start: %v \n\r", job.ChunkNumber, job.UploadURL.URL, job.ChunkSize, job.ChunkStart)
+			etag, err := c.uploadArchiveChunk(job.UploadURL, chunkData, int64(len(chunkData)))
+			if err != nil {
+				fmt.Printf("Error uploading chunk %d to %s \n\r", job.ChunkNumber, job.UploadURL.URL)
+				errors <- fmt.Errorf("upload chunk part %d: %s", job.ChunkNumber, err)
+				wg.Done()
+				continue
+			}
+
+			results <- struct {
+				ChunkNumber int
+				ChunkSize   int64
+				ETag        string
+			}{job.ChunkNumber, job.ChunkSize, etag}
+			wg.Done()
+		}
+	}
+
+	workerCount := 10 // Number of concurrent workers
+	for w := 0; w < workerCount; w++ {
+		go worker()
+	}
+
+	for i := 0; i < chunkCount; i++ {
+		chunkStart := int64(i) * int64(chunkSize)
+		chunkEnd := int64(chunkSize)
+		if i == chunkCount-1 {
+			chunkEnd = int64(lastChunkSize)
+		}
+
+		wg.Add(1)
+		jobs <- Job{
+			ChunkNumber: i,
+			ChunkStart:  chunkStart,
+			ChunkSize:   chunkEnd,
+			UploadURL:   uploadURLs[i],
+		}
+	}
+	close(jobs)
+
+	wg.Wait()
+	close(results)
+	close(errors)
+
+	fmt.Printf("Results: %+v \n\r", results)
+
+	etags := make([]string, chunkCount)
+	for result := range results {
+		etags[result.ChunkNumber] = result.ETag
+	}
+	c.logger.Debugf("Etags: %+v to  \n\r", etags)
+
+	fmt.Printf("Etags: %+v \n\r", etags)
+
+	for err := range errors {
+		if err != nil {
+			return nil, err
+		}
+	}
 	return etags, nil
 }
 
@@ -225,6 +292,7 @@ func (c apiClient) acknowledgeUpload(successful bool, uploadID string, partTags 
 		Etags:      partTags,
 	})
 	if err != nil {
+		fmt.Printf("Error marshalling acknowledge request: %s \n\r", err)
 		return acknowledgeResponse{}, err
 	}
 
@@ -258,6 +326,7 @@ func (c apiClient) acknowledgeUpload(successful bool, uploadID string, partTags 
 	c.logger.Debugf("Acknowledge response dump: %s", string(dump))
 
 	if resp.StatusCode != http.StatusOK {
+		fmt.Printf("Error acknowledging upload: %s \n\r", unwrapError(resp))
 		return acknowledgeResponse{}, unwrapError(resp)
 	}
 
