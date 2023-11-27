@@ -96,7 +96,7 @@ steps:
 - save-cache@1:
     inputs:
     - key: '{{ .OS }}-{{ .Arch }}-npm-cache-{{ checksum "package-lock.json" }}'
-    - path: node_modules
+    - paths: node_modules
 ```
 
 #### Multiple independent caches
