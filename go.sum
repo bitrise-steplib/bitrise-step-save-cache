@@ -1,6 +1,6 @@
 github.com/BurntSushi/toml v1.1.0/go.mod h1:CxXYINrC8qIiEnFrOxCa7Jy5BFHlXnUU2pbicEuybxQ=
-github.com/bitrise-io/go-steputils/v2 v2.0.0-alpha.22.0.20231127144342-feba89894957 h1:blZFDFqY35U5p+GXfxQ6Z+UGwweNwPZdgk5nkYHnYiE=
-github.com/bitrise-io/go-steputils/v2 v2.0.0-alpha.22.0.20231127144342-feba89894957/go.mod h1:1uMO6acCD1bOnLaG9Aa7aC7SPMMaEXbP7oser0VeIGc=
+github.com/bitrise-io/go-steputils/v2 v2.0.0-alpha.22.0.20231201114852-294c2e696453 h1:7TuJzeDhG6J0dzbT3XXkfFvbzidbmPj8cm6LFFefKkM=
+github.com/bitrise-io/go-steputils/v2 v2.0.0-alpha.22.0.20231201114852-294c2e696453/go.mod h1:1uMO6acCD1bOnLaG9Aa7aC7SPMMaEXbP7oser0VeIGc=
 github.com/bitrise-io/go-utils v1.0.1 h1:e7mepVBkVN1DXRPESNXb0djEw6bxB6B93p/Q74zzcvk=
 github.com/bitrise-io/go-utils v1.0.1/go.mod h1:ZY1DI+fEpZuFpO9szgDeICM4QbqoWVt0RSY3tRI1heY=
 github.com/bitrise-io/go-utils/v2 v2.0.0-alpha.13/go.mod h1:gZWtM7PLn1VOroa4gN1La/24aRVc0jg5R701jTsPaO8=
@@ -26,7 +26,6 @@ github.com/hashicorp/go-hclog v0.9.2/go.mod h1:5CU+agLiy3J7N7QjHK5d05KxGsuXiQLrj
 github.com/hashicorp/go-retryablehttp v0.7.0/go.mod h1:vAew36LZh98gCBJNLH42IQ1ER/9wtLZZ8meHqQvEYWY=
 github.com/hashicorp/go-retryablehttp v0.7.1 h1:sUiuQAnLlbvmExtFQs72iFW/HXeUn8Z1aJLQ4LJJbTQ=
 github.com/hashicorp/go-retryablehttp v0.7.1/go.mod h1:vAew36LZh98gCBJNLH42IQ1ER/9wtLZZ8meHqQvEYWY=
-github.com/klauspost/compress v1.17.3 h1:qkRjuerhUU1EmXLYGkSH6EZL+vPSxIrYjLNAK4slzwA=
 github.com/klauspost/compress v1.17.3/go.mod h1:/dCuZOvVtNoHsyb+cuJD3itjs3NbnF6KH9zAO4BDxPM=
 github.com/melbahja/got v0.7.0 h1:YHbiuNZVS8fIkyV0iXyThQQliwlKZb5h4k80zBVovxg=
 github.com/melbahja/got v0.7.0/go.mod h1:27cUstWCEfj6HBESMTGzCFY24Qj+QNMWot3+KuxguQU=
