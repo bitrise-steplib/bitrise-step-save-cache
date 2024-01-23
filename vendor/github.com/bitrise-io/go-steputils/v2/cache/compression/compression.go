@@ -17,63 +17,117 @@ import (
 	gozstd "github.com/klauspost/compress/zstd"
 )
 
-// Compress creates a compressed archive from the provided files and folders using absolute paths.
-func Compress(archivePath string, includePaths []string, logger log.Logger, envRepo env.Repository) error {
-	haveZstd := checkZstdBinary(envRepo, logger)
-
-	if !haveZstd {
-		logger.Infof("Falling back to native implementation of zstd.")
-		if err := compressWithGoLib(archivePath, includePaths, logger, envRepo); err != nil {
-			return fmt.Errorf("compress files: %w", err)
-		}
-		return nil
-	}
-
-	logger.Infof("Using installed zstd binary")
-	if err := compressWithBinary(archivePath, includePaths, logger, envRepo); err != nil {
-		return fmt.Errorf("compress files: %w", err)
-	}
-	return nil
+// ArchiveDependencyChecker ...
+//
+//go:generate moq -stub -out archive_dependency_checker.go . ArchiveDependencyChecker
+type ArchiveDependencyChecker interface {
+	CheckDependencies() bool
 }
 
-// Decompress takes an archive path and extracts files. This assumes an archive created with absolute file paths.
-func Decompress(archivePath string, logger log.Logger, envRepo env.Repository, destinationDirectory string) error {
-	haveZstd := checkZstdBinary(envRepo, logger)
-	if !haveZstd {
-		logger.Infof("Falling back to native implementation of zstd.")
-		if err := decompressWithGolib(archivePath, logger, envRepo, destinationDirectory); err != nil {
-			return fmt.Errorf("decompress files: %w", err)
-		}
-		return nil
-	}
-
-	logger.Infof("Using installed zstd binary")
-	if err := decompressWithBinary(archivePath, logger, envRepo, destinationDirectory); err != nil {
-		return fmt.Errorf("decompress files: %w", err)
-	}
-	return nil
+// DependencyChecker ...
+type DependencyChecker struct {
+	logger  log.Logger
+	envRepo env.Repository
 }
 
-func checkZstdBinary(envRepo env.Repository, logger log.Logger) bool {
-	// TODO: check the same for `tar` as well, as if there is zstd, but no tar -> the only way to proceed is to fall back to lib based implementation
-	cmdFactory := command.NewFactory(envRepo)
+// NewDependencyChecker ...
+func NewDependencyChecker(logger log.Logger, envRepo env.Repository) *DependencyChecker {
+	return &DependencyChecker{
+		logger:  logger,
+		envRepo: envRepo,
+	}
+}
+
+// CheckDependencies ...
+func (z *DependencyChecker) CheckDependencies() bool {
+	return z.checkZstd() && z.checkTar()
+}
+
+func (z *DependencyChecker) checkZstd() bool {
+	cmdFactory := command.NewFactory(z.envRepo)
 	cmd := cmdFactory.Create("which", []string{"zstd"}, nil)
-	logger.Debugf("$ %s", cmd.PrintableCommandArgs())
+	z.logger.Debugf("$ %s", cmd.PrintableCommandArgs())
 
 	_, err := cmd.RunAndReturnTrimmedCombinedOutput()
 	if err != nil {
-		logger.Warnf("zstd is not present in $PATH, falling back to native implementation.")
+		z.logger.Warnf("zstd is not present in $PATH, falling back to native implementation.")
 		return false
 	}
 
 	return true
 }
 
-func compressWithGoLib(archivePath string, includePaths []string, logger log.Logger, envRepo env.Repository) error {
+func (z *DependencyChecker) checkTar() bool {
+	cmdFactory := command.NewFactory(z.envRepo)
+	cmd := cmdFactory.Create("which", []string{"tar"}, nil)
+	z.logger.Debugf("$ %s", cmd.PrintableCommandArgs())
+
+	_, err := cmd.RunAndReturnTrimmedCombinedOutput()
+	if err != nil {
+		z.logger.Warnf("tar is not present in $PATH, falling back to native implementation.")
+		return false
+	}
+
+	return true
+}
+
+// Archiver ...
+type Archiver struct {
+	logger                   log.Logger
+	envRepo                  env.Repository
+	archiveDependencyChecker ArchiveDependencyChecker
+}
+
+// NewArchiver ...
+func NewArchiver(logger log.Logger, envRepo env.Repository, archiveDependencyChecker ArchiveDependencyChecker) *Archiver {
+	return &Archiver{
+		logger:                   logger,
+		envRepo:                  envRepo,
+		archiveDependencyChecker: archiveDependencyChecker,
+	}
+}
+
+// Compress creates a compressed archive from the provided files and folders using absolute paths.
+func (a *Archiver) Compress(archivePath string, includePaths []string) error {
+	haveZstd := a.archiveDependencyChecker.CheckDependencies()
+
+	if !haveZstd {
+		a.logger.Infof("Falling back to native implementation of zstd.")
+		if err := a.compressWithGoLib(archivePath, includePaths); err != nil {
+			return fmt.Errorf("compress files: %w", err)
+		}
+		return nil
+	}
+
+	a.logger.Infof("Using installed zstd binary")
+	if err := a.compressWithBinary(archivePath, includePaths); err != nil {
+		return fmt.Errorf("compress files: %w", err)
+	}
+	return nil
+}
+
+// Decompress takes an archive path and extracts files. This assumes an archive created with absolute file paths.
+func (a *Archiver) Decompress(archivePath string, destinationDirectory string) error {
+	haveZstd := a.archiveDependencyChecker.CheckDependencies()
+	if !haveZstd {
+		a.logger.Infof("Falling back to native implementation of zstd.")
+		if err := a.decompressWithGolib(archivePath, destinationDirectory); err != nil {
+			return fmt.Errorf("decompress files: %w", err)
+		}
+		return nil
+	}
+
+	a.logger.Infof("Using installed zstd binary")
+	if err := a.decompressWithBinary(archivePath, destinationDirectory); err != nil {
+		return fmt.Errorf("decompress files: %w", err)
+	}
+	return nil
+}
+
+func (a *Archiver) compressWithGoLib(archivePath string, includePaths []string) error {
 	var buf bytes.Buffer
 
 	for _, p := range includePaths {
-		// TODO check what options we have in the lib for like `"zstd --threads=0"`
 		zstdWriter, err := gozstd.NewWriter(&buf)
 		if err != nil {
 			return fmt.Errorf("create zstd writer: %w", err)
@@ -154,8 +208,8 @@ func compressWithGoLib(archivePath string, includePaths []string, logger log.Log
 	return nil
 }
 
-func compressWithBinary(archivePath string, includePaths []string, logger log.Logger, envRepo env.Repository) error {
-	cmdFactory := command.NewFactory(envRepo)
+func (a *Archiver) compressWithBinary(archivePath string, includePaths []string) error {
+	cmdFactory := command.NewFactory(a.envRepo)
 
 	/*
 		tar arguments:
@@ -175,7 +229,7 @@ func compressWithBinary(archivePath string, includePaths []string, logger log.Lo
 
 	cmd := cmdFactory.Create("tar", tarArgs, nil)
 
-	logger.Debugf("$ %s", cmd.PrintableCommandArgs())
+	a.logger.Debugf("$ %s", cmd.PrintableCommandArgs())
 
 	out, err := cmd.RunAndReturnTrimmedCombinedOutput()
 	if err != nil {
@@ -189,7 +243,7 @@ func compressWithBinary(archivePath string, includePaths []string, logger log.Lo
 	return nil
 }
 
-func decompressWithGolib(archivePath string, logger log.Logger, envRepo env.Repository, destinationDirectory string) error {
+func (a *Archiver) decompressWithGolib(archivePath string, destinationDirectory string) error {
 	compressedFile, err := os.OpenFile(archivePath, os.O_RDWR, 0777)
 	if err != nil {
 		return fmt.Errorf("read file %s: %w", archivePath, err)
@@ -250,8 +304,8 @@ func decompressWithGolib(archivePath string, logger log.Logger, envRepo env.Repo
 	return nil
 }
 
-func decompressWithBinary(archivePath string, logger log.Logger, envRepo env.Repository, destinationDirectory string) error {
-	commandFactory := command.NewFactory(envRepo)
+func (a *Archiver) decompressWithBinary(archivePath string, destinationDirectory string) error {
+	commandFactory := command.NewFactory(a.envRepo)
 
 	/*
 		tar arguments:
@@ -269,11 +323,11 @@ func decompressWithBinary(archivePath string, logger log.Logger, envRepo env.Rep
 	}
 
 	if destinationDirectory != "" {
-		decompressTarArgs = append(decompressTarArgs, fmt.Sprintf("--directory %s", destinationDirectory))
+		decompressTarArgs = append(decompressTarArgs, "--directory", destinationDirectory)
 	}
 
 	cmd := commandFactory.Create("tar", decompressTarArgs, nil)
-	logger.Debugf("$ %s", cmd.PrintableCommandArgs())
+	a.logger.Debugf("$ %s", cmd.PrintableCommandArgs())
 
 	out, err := cmd.RunAndReturnTrimmedCombinedOutput()
 	if err != nil {
