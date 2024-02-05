@@ -3,8 +3,8 @@ module github.com/bitrise-steplib/bitrise-step-save-cache
 go 1.17
 
 require (
-	github.com/bitrise-io/go-steputils/v2 v2.0.0-alpha.18
-	github.com/bitrise-io/go-utils/v2 v2.0.0-alpha.15
+	github.com/bitrise-io/go-steputils/v2 v2.0.0-alpha.25
+	github.com/bitrise-io/go-utils/v2 v2.0.0-alpha.20
 )
 
 require (
@@ -14,5 +14,7 @@ require (
 	github.com/gofrs/uuid v4.3.1+incompatible // indirect
 	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
 	github.com/hashicorp/go-retryablehttp v0.7.1 // indirect
+	github.com/klauspost/compress v1.17.3 // indirect
+	github.com/melbahja/got v0.7.0 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 )
