@@ -17,7 +17,7 @@ type Input struct {
 	Key              string `env:"key,required"`
 	Paths            string `env:"paths,required"`
 	IsKeyUnique      bool   `env:"is_key_unique"`
-	CompressionLevel int    `env:"compression_level,range:[1..19]"`
+	CompressionLevel int    `env:"compression_level,range[1..19]"`
 }
 
 type SaveCacheStep struct {
