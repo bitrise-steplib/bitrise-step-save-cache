@@ -1,4 +1,4 @@
-# github.com/bitrise-io/go-steputils/v2 v2.0.0-alpha.30.0.20240521100648-6e1444a61cbd
+# github.com/bitrise-io/go-steputils/v2 v2.0.0-alpha.30.0.20240521161227-6e46a9cc137a
 ## explicit; go 1.17
 github.com/bitrise-io/go-steputils/v2/cache
 github.com/bitrise-io/go-steputils/v2/cache/compression
@@ -39,8 +39,8 @@ github.com/hashicorp/go-cleanhttp
 # github.com/hashicorp/go-retryablehttp v0.7.1
 ## explicit; go 1.13
 github.com/hashicorp/go-retryablehttp
-# github.com/klauspost/compress v1.17.3
-## explicit; go 1.19
+# github.com/klauspost/compress v1.17.8
+## explicit; go 1.20
 github.com/klauspost/compress
 github.com/klauspost/compress/fse
 github.com/klauspost/compress/huff0
