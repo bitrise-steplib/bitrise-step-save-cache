@@ -104,6 +104,12 @@ inputs:
     - "true"
     - "false"
 
+- compression_level: 3
+  opts:
+    title: Compression level
+    summary: Zstd compression level. Valid values are between 1 and 19. Defaults to 3.
+    is_required: false
+
 - is_key_unique: "false"
   opts:
     title: Unique cache key
