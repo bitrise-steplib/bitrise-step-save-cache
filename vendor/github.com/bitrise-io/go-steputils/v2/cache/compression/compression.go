@@ -8,7 +8,6 @@ import (
 	"io"
 	"io/fs"
 	"os"
-	"os/exec"
 	"path/filepath"
 
 	"github.com/bitrise-io/go-utils/v2/command"
@@ -109,7 +108,7 @@ func (a *Archiver) compressWithGoLib(archivePath string, includePaths []string) 
 	var buf bytes.Buffer
 
 	for _, p := range includePaths {
-		zstdWriter, err := zstd.NewWriter(&buf)
+		zstdWriter, err := zstd.NewWriter(&buf, zstd.WithEncoderLevel(zstd.SpeedFastest))
 		if err != nil {
 			return fmt.Errorf("create zstd writer: %w", err)
 		}
@@ -201,7 +200,7 @@ func (a *Archiver) compressWithBinary(archivePath string, includePaths []string)
 		-f: Output file
 	*/
 	tarArgs := []string{
-		"--use-compress-program", "zstd --threads=0", // Use CPU count threads
+		"--use-compress-program", "zstd --fast --threads=0", // Use CPU count threads
 		"-P",
 		"-c",
 		"-f", archivePath,
@@ -214,11 +213,8 @@ func (a *Archiver) compressWithBinary(archivePath string, includePaths []string)
 
 	out, err := cmd.RunAndReturnTrimmedCombinedOutput()
 	if err != nil {
-		var exitErr *exec.ExitError
-		if errors.As(err, &exitErr) {
-			return fmt.Errorf("command failed with exit status %d (%s):\n%w", exitErr.ExitCode(), cmd.PrintableCommandArgs(), errors.New(out))
-		}
-		return fmt.Errorf("executing command failed (%s): %w", cmd.PrintableCommandArgs(), err)
+		a.logger.Printf("Output: %s", out)
+		return err
 	}
 
 	return nil
@@ -312,11 +308,8 @@ func (a *Archiver) decompressWithBinary(archivePath string, destinationDirectory
 
 	out, err := cmd.RunAndReturnTrimmedCombinedOutput()
 	if err != nil {
-		var exitErr *exec.ExitError
-		if errors.As(err, &exitErr) {
-			return fmt.Errorf("command failed with exit status %d (%s):\n%w", exitErr.ExitCode(), cmd.PrintableCommandArgs(), errors.New(out))
-		}
-		return fmt.Errorf("executing command failed (%s): %w", cmd.PrintableCommandArgs(), err)
+		a.logger.Printf("Output: %s", out)
+		return err
 	}
 
 	return nil
