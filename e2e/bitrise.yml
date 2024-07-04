@@ -168,13 +168,13 @@ workflows:
     - change-workdir:
         title: Switch working dir to _tmp
         inputs:
-          - path: ./_tmp
+        - path: ./_tmp
     - script:
         title: Install dependencies
         inputs:
-          - content: |-
-              set -ex
-              npm ci
+        - content: |-
+            set -ex
+            npm ci
     - path::./:
         title: Execute step
         run_if: "true"
