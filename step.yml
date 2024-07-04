@@ -110,6 +110,19 @@ inputs:
     summary: Zstd compression level to control speed / archive size. Set to 1 for fastest option. Valid values are between 1 and 19. Defaults to 3.
     is_required: false
 
+- custom_tar_args:
+  opts:
+    title: Custom tar arguments
+    summary: Additional arguments to pass to the tar command when creating the cache archive.
+    description: |-
+      Additional arguments to pass to the tar command when creating the cache archive.
+
+      The arguments are passed directly to the `tar` command. Use this input to customize the behavior of the tar command when creating the cache archive
+      (these are appended to the default arguments used by the step).
+
+      Example: `--format posix`
+    is_required: false
+
 - is_key_unique: "false"
   opts:
     title: Unique cache key

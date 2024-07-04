@@ -18,6 +18,7 @@ type Input struct {
 	Paths            string `env:"paths,required"`
 	IsKeyUnique      bool   `env:"is_key_unique"`
 	CompressionLevel int    `env:"compression_level,range[1..19]"`
+	CustomTarArgs    string `env:"custom_tar_args"`
 }
 
 type SaveCacheStep struct {
@@ -52,7 +53,7 @@ func (step SaveCacheStep) Run() error {
 
 	step.logger.EnableDebugLog(input.Verbose)
 
-	saver := cache.NewSaver(step.envRepo, step.logger, step.pathProvider, step.pathModifier, step.pathChecker)
+	saver := cache.NewSaver(step.envRepo, step.logger, step.pathProvider, step.pathModifier, step.pathChecker, nil)
 	return saver.Save(cache.SaveCacheInput{
 		StepId:           "save-cache",
 		Verbose:          input.Verbose,
@@ -60,5 +61,6 @@ func (step SaveCacheStep) Run() error {
 		Paths:            strings.Split(input.Paths, "\n"),
 		IsKeyUnique:      input.IsKeyUnique,
 		CompressionLevel: input.CompressionLevel,
+		CustomTarArgs:    strings.Fields(input.CustomTarArgs),
 	})
 }

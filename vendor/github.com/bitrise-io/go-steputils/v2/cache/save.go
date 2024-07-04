@@ -1,6 +1,7 @@
 package cache
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -28,6 +29,9 @@ type SaveCacheInput struct {
 	// CompressionLevel is the zstd compression level used. Valid values are between 1 and 19.
 	// If not provided (0), the default value (3) will be used.
 	CompressionLevel int
+	// CustomTarArgs is a list of custom arguments to pass to the tar command. These are appended to the default arguments.
+	// Example: []string{"--format", "posix"}
+	CustomTarArgs []string
 	// IsKeyUnique indicates that the cache key is enough for knowing the cache archive is different from
 	// another cache archive.
 	// This can be set to true if the cache key contains a checksum that changes when any of the cached files change.
@@ -46,6 +50,7 @@ type saveCacheConfig struct {
 	Key              string
 	Paths            []string
 	CompressionLevel int
+	CustomTarArgs    []string
 	APIBaseURL       stepconf.Secret
 	APIAccessToken   stepconf.Secret
 }
@@ -56,22 +61,29 @@ type saver struct {
 	pathProvider pathutil.PathProvider
 	pathModifier pathutil.PathModifier
 	pathChecker  pathutil.PathChecker
+	uploader     network.Uploader
 }
 
-// NewSaver ...
+// NewSaver creates a new cache saver instance. `uploader` can be nil, unless you want to provide a custom `Uploader` implementation.
 func NewSaver(
 	envRepo env.Repository,
 	logger log.Logger,
 	pathProvider pathutil.PathProvider,
 	pathModifier pathutil.PathModifier,
 	pathChecker pathutil.PathChecker,
+	uploader network.Uploader,
 ) *saver {
+	var uploaderImpl network.Uploader = uploader
+	if uploader == nil {
+		uploaderImpl = network.DefaultUploader{}
+	}
 	return &saver{
 		envRepo:      envRepo,
 		logger:       logger,
 		pathProvider: pathProvider,
 		pathModifier: pathModifier,
 		pathChecker:  pathChecker,
+		uploader:     uploaderImpl,
 	}
 }
 
@@ -101,7 +113,7 @@ func (s *saver) Save(input SaveCacheInput) error {
 	s.logger.Println()
 	s.logger.Infof("Creating archive...")
 	compressionStartTime := time.Now()
-	archivePath, err := s.compress(config.Paths, config.CompressionLevel)
+	archivePath, err := s.compress(config.Paths, config.CompressionLevel, config.CustomTarArgs)
 	if err != nil {
 		return fmt.Errorf("compression failed: %s", err)
 	}
@@ -133,7 +145,7 @@ func (s *saver) Save(input SaveCacheInput) error {
 	s.logger.Println()
 	s.logger.Infof("Uploading archive...")
 	uploadStartTime := time.Now()
-	err = s.upload(archivePath, fileInfo.Size(), config)
+	err = s.upload(archivePath, fileInfo.Size(), archiveChecksum, config)
 	if err != nil {
 		return fmt.Errorf("cache upload failed: %w", err)
 	}
@@ -183,6 +195,7 @@ func (s *saver) createConfig(input SaveCacheInput) (saveCacheConfig, error) {
 		Key:              evaluatedKey,
 		Paths:            finalPaths,
 		CompressionLevel: input.CompressionLevel,
+		CustomTarArgs:    input.CustomTarArgs,
 		APIBaseURL:       stepconf.Secret(apiBaseURL),
 		APIAccessToken:   stepconf.Secret(apiAccessToken),
 	}, nil
@@ -246,7 +259,7 @@ func (s *saver) evaluateKey(keyTemplate string) (string, error) {
 	return model.Evaluate(keyTemplate)
 }
 
-func (s *saver) compress(paths []string, compressionLevel int) (string, error) {
+func (s *saver) compress(paths []string, compressionLevel int, customTarArgs []string) (string, error) {
 	if compression.AreAllPathsEmpty(paths) {
 		s.logger.Warnf("The provided paths are all empty, skipping compression and upload.")
 		os.Exit(0)
@@ -264,7 +277,7 @@ func (s *saver) compress(paths []string, compressionLevel int) (string, error) {
 		s.envRepo,
 		compression.NewDependencyChecker(s.logger, s.envRepo))
 
-	err = archiver.Compress(archivePath, paths, compressionLevel)
+	err = archiver.Compress(archivePath, paths, compressionLevel, customTarArgs)
 	if err != nil {
 		return "", err
 	}
@@ -272,13 +285,14 @@ func (s *saver) compress(paths []string, compressionLevel int) (string, error) {
 	return archivePath, nil
 }
 
-func (s *saver) upload(archivePath string, archiveSize int64, config saveCacheConfig) error {
+func (s *saver) upload(archivePath string, archiveSize int64, archiveChecksum string, config saveCacheConfig) error {
 	params := network.UploadParams{
-		APIBaseURL:  string(config.APIBaseURL),
-		Token:       string(config.APIAccessToken),
-		ArchivePath: archivePath,
-		ArchiveSize: archiveSize,
-		CacheKey:    config.Key,
+		APIBaseURL:      string(config.APIBaseURL),
+		Token:           string(config.APIAccessToken),
+		ArchivePath:     archivePath,
+		ArchiveChecksum: archiveChecksum,
+		ArchiveSize:     archiveSize,
+		CacheKey:        config.Key,
 	}
-	return network.Upload(params, s.logger)
+	return s.uploader.Upload(context.Background(), params, s.logger)
 }
