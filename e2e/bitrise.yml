@@ -157,6 +157,36 @@ workflows:
         - verbose: "true"
         - is_key_unique: "true"
 
+  test_custom_tar_args:
+    envs:
+      - TEST_APP_URL: https://github.com/bitrise-io/Bitrise-React-Native-Sample
+      - BRANCH: master
+    before_run:
+      - _generate_api_token
+      - _setup
+    steps:
+      - change-workdir:
+          title: Switch working dir to _tmp
+          inputs:
+            - path: ./_tmp
+      - script:
+          title: Install dependencies
+          inputs:
+            - content: |-
+                set -ex
+                npm ci
+      - path::./:
+          title: Execute step
+          run_if: "true"
+          is_skippable: false
+          inputs:
+            - key: |
+                {{ .OS }}-{{ .Arch }}-node-modules-{{ checksum "package-lock.json" }}
+            - paths: |-
+                node_modules
+            - verbose: "true"
+            - custom_tar_args: "--format posix"
+
   _setup:
     steps:
     - script:
