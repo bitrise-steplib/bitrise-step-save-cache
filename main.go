@@ -17,6 +17,7 @@ func main() {
 	os.Exit(int(exitCode))
 }
 
+// test
 func run() exitcode.ExitCode {
 	logger := log.NewLogger()
 	envRepo := env.NewRepository()
