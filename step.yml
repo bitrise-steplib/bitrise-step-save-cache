@@ -104,12 +104,6 @@ inputs:
     - "true"
     - "false"
 
-- compression_level: 3
-  opts:
-    title: Compression level
-    summary: Zstd compression level to control speed / archive size. Set to 1 for fastest option. Valid values are between 1 and 19. Defaults to 3.
-    is_required: false
-
 - custom_tar_args:
   opts:
     title: Custom tar arguments
@@ -138,3 +132,24 @@ inputs:
     value_options:
     - "true"
     - "false"
+
+- compress_chunks: "false"
+  opts:
+    title: Compress chunks
+    summary: Compress each chunk with zstd before uploading.
+    description: |-
+      When enabled, each chunk is compressed with zstd before uploading. This reduces storage and bandwidth usage while maintaining excellent deduplication.
+
+      The chunking is performed on uncompressed data (for optimal CDC deduplication), then each chunk is compressed individually before upload.
+
+      Disable this if you want faster uploads at the cost of more storage/bandwidth, or if your data doesn't compress well (e.g., already compressed files like images, videos, or archives).
+    is_required: false
+    value_options:
+    - "true"
+    - "false"
+
+- compression_level: 3
+  opts:
+    title: Compression level
+    summary: Zstd compression level for chunks. Valid values are 1-19. Lower is faster, higher is smaller. Only used when compress_chunks is true.
+    is_required: false
