@@ -2,20 +2,25 @@ package network
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"os"
 	"strings"
 
 	"github.com/bitrise-io/go-utils/v2/log"
+	"github.com/bitrise-io/go-utils/v2/retryhttp"
 	"github.com/hashicorp/go-retryablehttp"
 )
 
 const maxKeyLength = 512
 const maxKeyCount = 8
+
+// datacenterHeader tells the cache service which DC the build VM runs in, for DC-aware placement.
+const datacenterHeader = "X-Bitrise-Datacenter"
+const datacenterEnvKey = "BITRISE_DEN_VM_DATACENTER"
 
 type prepareUploadRequest struct {
 	CacheKey           string `json:"cache_key"`
@@ -31,6 +36,36 @@ type prepareMultipartUploadResponse struct {
 	ChunkCount         int64                       `json:"chunk_count"`
 	LastChunkSizeBytes int64                       `json:"last_chunk_size_bytes"`
 	URLs               []prepareMultipartUploadURL `json:"urls"`
+}
+
+// uploadSkipHeader tells the server this client understands the upload skip response.
+const uploadSkipHeader = "X-Bitrise-Cache-Upload-Skip"
+
+// ErrUploadSkipped matches (via errors.Is) an UploadSkippedError anywhere in an error chain. It is only
+// returned when UploadParams.AllowServerSkip is set; callers opting in must treat it as success.
+var ErrUploadSkipped = errors.New("upload skipped by the cache server")
+
+// UploadSkippedError is returned by Upload when the server reports the archive doesn't need uploading,
+// because another build is uploading or just uploaded the identical key. Nothing was uploaded or acknowledged.
+type UploadSkippedError struct {
+	Reason     string
+	ExistingID string
+}
+
+// Error implements error.
+func (e UploadSkippedError) Error() string {
+	return fmt.Sprintf("%s: %s (existing upload %s)", ErrUploadSkipped, e.Reason, e.ExistingID)
+}
+
+// Is makes errors.Is(err, ErrUploadSkipped) match.
+func (e UploadSkippedError) Is(target error) bool {
+	return target == ErrUploadSkipped
+}
+
+type uploadSkippedResponse struct {
+	Skipped    bool   `json:"skipped"`
+	Reason     string `json:"reason"`
+	ExistingID string `json:"existing_id"`
 }
 
 type prepareMultipartUploadURL struct {
@@ -70,7 +105,15 @@ func newAPIClient(client *retryablehttp.Client, baseURL string, accessToken stri
 	}
 }
 
-func (c apiClient) prepareMultipartUpload(requestBody prepareUploadRequest) (prepareMultipartUploadResponse, error) {
+func (c apiClient) setCommonHeaders(req *retryablehttp.Request) {
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", c.accessToken))
+	// Read per request, like BITRISE_BUILD_SLUG.
+	if dc := strings.TrimSpace(os.Getenv(datacenterEnvKey)); dc != "" {
+		req.Header.Set(datacenterHeader, dc)
+	}
+}
+
+func (c apiClient) prepareMultipartUpload(requestBody prepareUploadRequest, allowServerSkip bool) (prepareMultipartUploadResponse, error) {
 	url := fmt.Sprintf("%s/multipart-upload", c.baseURL)
 
 	body, err := json.Marshal(requestBody)
@@ -82,8 +125,11 @@ func (c apiClient) prepareMultipartUpload(requestBody prepareUploadRequest) (pre
 	if err != nil {
 		return prepareMultipartUploadResponse{}, err
 	}
-	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", c.accessToken))
+	c.setCommonHeaders(req)
 	req.Header.Set("Content-type", "application/json")
+	if allowServerSkip {
+		req.Header.Set(uploadSkipHeader, "1")
+	}
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
@@ -96,6 +142,9 @@ func (c apiClient) prepareMultipartUpload(requestBody prepareUploadRequest) (pre
 		}
 	}(resp.Body)
 
+	if resp.StatusCode == http.StatusOK {
+		return prepareMultipartUploadResponse{}, decodeUploadSkipped(resp)
+	}
 	if resp.StatusCode != http.StatusCreated {
 		return prepareMultipartUploadResponse{}, unwrapError(resp)
 	}
@@ -142,7 +191,7 @@ func (c apiClient) acknowledgeMultipartUpload(uploadID string, successful bool, 
 	if err != nil {
 		return acknowledgeResponse{}, err
 	}
-	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", c.accessToken))
+	c.setCommonHeaders(req)
 	req.Header.Set("Content-type", "application/json")
 	if buildSlug := os.Getenv("BITRISE_BUILD_SLUG"); buildSlug != "" {
 		req.Header.Set("X-Build-Slug", buildSlug)
@@ -182,7 +231,7 @@ func (c apiClient) restore(cacheKeys []string) (restoreResponse, error) {
 	if err != nil {
 		return restoreResponse{}, err
 	}
-	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", c.accessToken))
+	c.setCommonHeaders(req)
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
@@ -211,8 +260,47 @@ func (c apiClient) restore(cacheKeys []string) (restoreResponse, error) {
 	return response, nil
 }
 
+// newUploadHTTPClient is the retrying client for uploads; see withoutUploadSkipHeaderOnRetry.
+func newUploadHTTPClient(logger log.Logger) *retryablehttp.Client {
+	client := retryhttp.NewClient(logger)
+	client.PrepareRetry = withoutUploadSkipHeaderOnRetry(client.PrepareRetry)
+
+	return client
+}
+
+// withoutUploadSkipHeaderOnRetry drops the skip header from retries: the server may have created the
+// upload before the first response was lost, and a retry would then be told to skip its own upload.
+func withoutUploadSkipHeaderOnRetry(next retryablehttp.PrepareRetry) retryablehttp.PrepareRetry {
+	return func(req *http.Request) error {
+		if req.Header.Get(uploadSkipHeader) != "" {
+			req.Header = req.Header.Clone() // retries share the header map with the previous attempt
+			req.Header.Del(uploadSkipHeader)
+		}
+		if next != nil {
+			return next(req)
+		}
+
+		return nil
+	}
+}
+
+// decodeUploadSkipped turns a 200 response into an UploadSkippedError; any other 200 body is an error.
+func decodeUploadSkipped(resp *http.Response) error {
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return err
+	}
+
+	var skipped uploadSkippedResponse
+	if err := json.Unmarshal(body, &skipped); err != nil || !skipped.Skipped {
+		return fmt.Errorf("unexpected HTTP %d response: %s", resp.StatusCode, body)
+	}
+
+	return UploadSkippedError{Reason: skipped.Reason, ExistingID: skipped.ExistingID}
+}
+
 func unwrapError(resp *http.Response) error {
-	errorResp, err := ioutil.ReadAll(resp.Body)
+	errorResp, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return err
 	}
