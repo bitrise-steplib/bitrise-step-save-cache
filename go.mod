@@ -1,15 +1,14 @@
 module github.com/bitrise-steplib/bitrise-step-save-cache
 
-go 1.20
+go 1.21
 
 require (
-	github.com/bitrise-io/go-steputils/v2 v2.0.0-alpha.47
-	github.com/bitrise-io/go-utils/v2 v2.0.0-alpha.33
+	github.com/bitrise-io/go-steputils/v2 v2.0.0-alpha.62
+	github.com/bitrise-io/go-utils/v2 v2.0.0-alpha.39
 )
 
 require (
-	github.com/bitrise-io/go-utils v1.0.13 // indirect
-	github.com/bitrise-io/got v0.0.0-20240902113940-25f6469d1456 // indirect
+	github.com/bitrise-io/got v0.0.0-20260831101303-9092ae48de2b // indirect
 	github.com/bmatcuk/doublestar/v4 v4.6.1 // indirect
 	github.com/docker/go-units v0.5.0 // indirect
 	github.com/gofrs/uuid/v5 v5.2.0 // indirect
